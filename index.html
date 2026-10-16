@@ -2,23 +2,627 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>murinoi</title>
-<meta name="description" content="murinoi — em breve.">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Murinoi — sua ideia, funcionando</title>
+<meta name="description" content="A Murinoi cria aplicativos, sistemas e automações com inteligência artificial, sob medida para o seu negócio.">
+<meta name="theme-color" content="#05060d">
+<meta property="og:title" content="Murinoi — sua ideia, funcionando">
+<meta property="og:description" content="Software e inteligência artificial sob medida. Para vender mais, gastar menos e parar de perder tempo.">
+<meta property="og:type" content="website">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&display=swap">
 <style>
-:root{--bg:#0b0b0f;--fg:#f4f4f5;--mute:#8b8b94;--accent:#7cf5c4}
-*{margin:0;box-sizing:border-box}
-html,body{height:100%}
-body{background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,sans-serif;display:grid;place-items:center;padding:16px;text-align:center}
-h1{font-size:clamp(2.5rem,10vw,5rem);letter-spacing:-.04em;font-weight:800}
-h1 span{color:var(--accent)}
-p{color:var(--mute);margin-top:.5rem}
+:root{
+  color-scheme:dark;
+  --bg:#05060d;--fg:#eef2ff;--body:#b9c1da;--mute:#7f89a8;--line:rgba(190,205,255,.16);--panel:rgba(10,12,26,.84);
+  --c1:#5ef2ff;--c2:#8b7bff;--c3:#ff6fc8;
+  --grad:linear-gradient(90deg,var(--c1),var(--c2) 55%,var(--c3));
+  --sans:"Jost","Futura","Century Gothic",system-ui,-apple-system,sans-serif;
+  /* Fibonacci: 8 13 21 34 55 89 144 */
+  --f1:8px;--f2:13px;--f3:21px;--f4:34px;--f5:55px;--f6:89px;--f7:144px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{--sh:130vh;--sh:130svh;scroll-behavior:smooth;scroll-snap-type:y proximity;-webkit-text-size-adjust:100%;background:var(--bg)}
+body{background:var(--bg);color:var(--fg);font:300 1.0625rem/1.65 var(--sans);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+#gl{position:fixed;left:0;top:0;width:100%;height:100vh;height:100lvh;z-index:0;display:block}
+#vig{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(2,3,8,.55) 100%)}
+.narrow #vig{background:radial-gradient(ellipse at 50% 35%,transparent 45%,rgba(2,3,8,.5) 100%),linear-gradient(to top,rgba(5,6,13,.95) 0,rgba(5,6,13,.7) 30%,transparent 52%)}
+a{color:inherit}
+em{font-style:normal}
+em .w{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* abertura */
+#boot{position:fixed;inset:0;z-index:20;background:var(--bg);display:grid;place-items:center;transition:opacity 1s .2s,visibility 0s 1.2s}
+#boot.off{opacity:0;visibility:hidden;pointer-events:none}
+#boot b{font:300 1.75rem var(--sans);letter-spacing:.04em}
+#boot i{display:block;width:89px;height:1px;margin:var(--f2) auto 0;background:var(--line);overflow:hidden;position:relative}
+#boot i::after{content:"";position:absolute;inset:0;background:var(--grad);animation:ld 1.4s ease-in-out infinite}
+@keyframes ld{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+/* topo */
+.top{position:fixed;left:0;right:0;top:0;z-index:6;display:flex;justify-content:space-between;align-items:center;padding:var(--f4) clamp(21px,5.5vw,89px) var(--f3);padding-top:calc(var(--f4) + env(safe-area-inset-top))}
+.logo{font:400 1.75rem/1 var(--sans);letter-spacing:-.01em;text-decoration:none;display:flex;align-items:center;gap:6px}
+.logo i{width:8px;height:8px;border-radius:50%;background:var(--grad);box-shadow:0 0 13px var(--c2)}
+.nav{display:flex;align-items:center;gap:var(--f4);font-weight:400;font-size:1rem}
+.nav a{text-decoration:none;color:var(--body);transition:color .3s}
+.nav a:hover{color:var(--fg)}
+.nav .cta{color:var(--fg);padding:9px 21px;border-radius:999px;border:1px solid transparent;background:linear-gradient(var(--bg),var(--bg)) padding-box,var(--grad) border-box}
+@media (max-width:900px){.nav a:not(.cta){display:none}}
+
+/* rótulos verticais nas laterais */
+.side{position:fixed;top:50%;z-index:5;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:var(--f3);font:400 .8125rem var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);pointer-events:none}
+.side span{writing-mode:vertical-rl;transform:rotate(180deg)}
+.side s{display:block;width:1px;height:34px;background:var(--line);transform:rotate(35deg)}
+.side.lft{left:clamp(13px,2.6vw,42px)}
+.side.rgt{right:clamp(13px,2.6vw,42px)}
+.side.rgt s{transform:none;height:55px;background:var(--grad);transform-origin:top;animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+
+/* seções: camadas que chegam do fundo */
+main{position:relative;z-index:2}
+.sec{min-height:100vh;min-height:100svh;display:flex;align-items:flex-start;padding:var(--f6) clamp(55px,8.5vw,144px)}
+.js .sec{position:fixed;inset:0;opacity:0;visibility:hidden;pointer-events:none;will-change:transform,opacity;overflow-y:auto;overscroll-behavior:contain}
+.js .sec.vis{visibility:visible}
+.js .sec.on{pointer-events:auto}
+.sec.r{justify-content:flex-end}
+.sec::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,rgba(5,6,13,.72) 0,rgba(5,6,13,.45) 34%,transparent 60%)}
+.sec.r::before{background:linear-gradient(270deg,rgba(5,6,13,.72) 0,rgba(5,6,13,.45) 34%,transparent 60%)}
+.blk{width:clamp(21rem,38.2vw,36rem);margin:auto 0}
+#contato h2,#conta h2{font-size:clamp(2.2rem,3.6vw,3.236rem)}
+#conta .calc{gap:var(--f2);padding:var(--f3) var(--f4)}
+#contato form{gap:var(--f2)}
+.label{display:flex;align-items:center;gap:var(--f3);font:400 .875rem var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--body);margin-bottom:var(--f4)}
+.label::after{content:"";width:55px;height:1px;background:var(--grad)}
+h2{font:300 clamp(2.4rem,4.6vw,4.236rem)/1.04 var(--sans);letter-spacing:-.02em}
+.sec p{color:var(--body);margin-top:var(--f4);max-width:30rem}
+.small{font-size:.9375rem;color:var(--mute)!important;margin-top:var(--f3)!important}
+
+/* hero empilhado */
+.stack{display:grid;line-height:1}
+.stack .sm{font:400 clamp(.8125rem,1.3vw,1.0625rem)/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--body);padding-left:clamp(34px,4.6vw,62px);margin:var(--f2) 0 var(--f1)}
+.stack .bg{font:300 clamp(3.4rem,8.8vw,7.4rem)/.92 var(--sans);letter-spacing:-.035em}
+.stack .bg sup{font-size:.38em;vertical-align:baseline;margin-left:.08em;color:var(--body)}
+
+.btn{display:inline-flex;align-items:center;gap:var(--f1);padding:14px 28px;border-radius:999px;border:0;background:var(--grad);color:#08091a;font:500 1rem var(--sans);text-decoration:none;cursor:pointer;transition:transform .3s,box-shadow .3s;box-shadow:0 8px 34px rgba(139,123,255,.28)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 44px rgba(139,123,255,.45)}
+.btn.ghost{background:transparent;color:var(--fg);box-shadow:none;border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--fg)}
+.row{display:flex;gap:var(--f2);flex-wrap:wrap;margin-top:var(--f4)}
+
+.list{margin-top:var(--f4);border-top:1px solid var(--line)}
+.li{padding:var(--f3) 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;column-gap:var(--f3)}
+.li i{font:400 .8125rem var(--sans);color:var(--c1);letter-spacing:.1em;padding-top:8px}
+.li b{display:block;font:400 1.5rem/1.15 var(--sans);letter-spacing:-.01em}
+.li span{color:var(--mute);font-size:.9375rem;grid-column:2}
+
+/* calculadora */
+.calc{margin-top:var(--f4);display:grid;gap:var(--f3);padding:var(--f4);border-radius:21px;background:var(--panel);border:1px solid var(--line)}
+.calc label{display:grid;gap:var(--f1);font:400 .875rem var(--sans);color:var(--mute)}
+.calc .top2{display:flex;justify-content:space-between;align-items:baseline;gap:var(--f2)}
+.calc output{color:var(--fg);font:400 1.25rem var(--sans);white-space:nowrap}
+input[type=range]{-webkit-appearance:none;appearance:none;height:2px;padding:0;border:0;border-radius:2px;background:var(--grad);outline-offset:10px;width:100%}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 0 0 5px rgba(139,123,255,.25),0 0 21px var(--c2);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:21px;height:21px;border:0;border-radius:50%;background:#fff;box-shadow:0 0 0 5px rgba(139,123,255,.25),0 0 21px var(--c2);cursor:pointer}
+.res{padding-top:var(--f3);border-top:1px solid var(--line)}
+.res small{display:block;font:400 .875rem var(--sans);color:var(--mute)}
+.res strong{display:block;font:300 clamp(3rem,6vw,4.236rem)/1.05 var(--sans);letter-spacing:-.03em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums;margin:var(--f1) 0}
+.res b{color:var(--fg);font-weight:500}
+
+.wa{display:flex;align-items:center;gap:var(--f2);margin-top:var(--f4);flex-wrap:wrap}
+.wa a{position:relative;display:inline-grid;place-items:center;width:62px;height:62px;border-radius:50%;color:var(--fg);text-decoration:none;background:linear-gradient(rgba(10,12,26,.55),rgba(10,12,26,.55)) padding-box,linear-gradient(135deg,rgba(94,242,255,.75),rgba(139,123,255,.75) 55%,rgba(255,111,200,.75)) border-box;border:1px solid transparent;box-shadow:0 8px 34px rgba(139,123,255,.22);transition:transform .3s,box-shadow .3s}
+.wa a::before{content:"";position:absolute;inset:0;border-radius:50%;background:var(--grad);opacity:.16;transition:opacity .3s}
+.wa a:hover{transform:translateY(-2px);box-shadow:0 12px 44px rgba(139,123,255,.4)}
+.wa a:hover::before{opacity:.3}
+.wa svg{position:relative;width:30px;height:30px;opacity:.92}
+.wa span{color:var(--body);font-size:.9375rem}
+.or{display:flex;align-items:center;gap:var(--f2);margin-top:var(--f4);color:var(--mute);font-size:.8125rem;letter-spacing:.12em;text-transform:uppercase}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+form{margin-top:var(--f3);display:grid;gap:var(--f3)}
+label{display:grid;gap:var(--f1);font:400 .875rem var(--sans);color:var(--mute)}
+textarea,input[type=text],input[type=number]{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;color:var(--fg);font:300 1.125rem/1.5 var(--sans);padding:var(--f1) 0 var(--f2);outline:none;transition:border-color .3s;resize:vertical}
+textarea:focus,input:focus{border-color:var(--c2)}
+::placeholder{color:#5c6584}
+form .btn{justify-self:start;margin-top:var(--f1)}
+small{color:var(--mute);font-size:.8125rem}
+.foot{margin-top:var(--f5);color:var(--mute);font-size:.8125rem;display:flex;gap:var(--f3);flex-wrap:wrap}
+.foot a{text-decoration:none}.foot a:hover{color:var(--fg)}
+
+/* revelar */
+.js .rv{opacity:0;transform:translateY(34px);transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--i,0)*55ms)}
+.js .sec.on .rv{opacity:1;transform:none}
+.w{display:inline-block}
+
+/* trilho de rolagem */
+#track{display:none}
+.js #track{display:block;position:relative;height:calc(var(--sh)*(var(--n) - 1) + 100vh);height:calc(var(--sh)*(var(--n) - 1) + 100svh)}
+.stop{position:absolute;left:0;width:100%;height:1px;scroll-snap-align:start}
+
+/* legenda científica + espiral áurea */
+.cap{position:fixed;left:clamp(55px,8.5vw,144px);bottom:var(--f4);z-index:4;font:400 .75rem var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);pointer-events:none;white-space:nowrap}
+.cap b{font-weight:500;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cap span{transition:opacity .4s}
+.spi{position:fixed;right:clamp(55px,6vw,89px);bottom:var(--f3);width:55px;height:55px;z-index:4;pointer-events:none}
+.spi .bg{fill:none;stroke:var(--line);stroke-width:1}
+.spi .fg{fill:none;stroke:url(#sg);stroke-width:1.8;stroke-linecap:round}
+.spi circle{fill:#fff;filter:drop-shadow(0 0 4px var(--c2))}
+
+/* retrato */
+.narrow .sec{align-items:flex-end;padding:var(--f7) var(--f3) calc(var(--f5) + env(safe-area-inset-bottom))}
+.narrow .sec.r{justify-content:flex-start}
+.narrow .sec::before,.narrow .sec.r::before{background:linear-gradient(to top,rgba(5,6,13,.97) 0,rgba(5,6,13,.88) 50%,transparent 80%)}
+.narrow .blk{width:100%;max-width:34rem;margin:auto 0 0}
+.narrow .sec p{margin-top:var(--f3)}
+.narrow .stack .bg{font-size:clamp(3rem,15.5vw,4.4rem)}
+.narrow h2{font-size:clamp(2.2rem,10vw,3rem)}
+.narrow .row{margin-top:var(--f3)}
+.narrow .calc{margin-top:var(--f3);padding:var(--f3);gap:var(--f2)}
+.narrow .res strong{font-size:clamp(2.6rem,12vw,3.4rem)}
+.narrow .small{display:none}
+.narrow .side{display:none}
+.narrow .cap{display:none}
+.narrow .spi{bottom:auto;top:calc(var(--f6) - 8px);right:var(--f3);width:42px;height:42px}
+.narrow .li{padding:var(--f2) 0}
+.narrow .li b{font-size:1.25rem}
+.narrow .label{margin-bottom:var(--f3)}
+
+.nogl body{background:radial-gradient(circle at 70% 30%,#1a1640,var(--bg) 60%) fixed}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.js .rv{transition-duration:.01s;filter:none}.side.rgt s,#boot i::after{animation:none}}
+:focus-visible{outline:2px solid var(--c1);outline-offset:3px;border-radius:4px}
 </style>
 </head>
 <body>
-<main>
-<h1>murinoi<span>.</span></h1>
-<p>Algo novo está chegando.</p>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div id="vig"></div>
+<div id="boot"><div><b>murinoi</b><i></i></div></div>
+
+<header class="top">
+  <a class="logo" href="#topo" aria-label="Murinoi — início">murinoi<i></i></a>
+  <nav class="nav" aria-label="Principal"><a href="#sob">Sob medida</a><a href="#conta">A conta</a><a href="#feito">O que fazemos</a><a class="cta" href="#contato">Pedir orçamento</a></nav>
+</header>
+<div class="side lft" aria-hidden="true"><span>Apps</span><s></s><span>Inteligência artificial</span><s></s><span>Sistemas</span></div>
+<div class="side rgt" aria-hidden="true"><span>Role</span><s></s></div>
+
+<main id="topo">
+
+<section class="sec l">
+  <div class="blk">
+    <h1 class="stack">
+      <span class="sm rv" style="--i:0">Sua ideia</span>
+      <span class="bg rv" style="--i:2"><em><span class="w">funcionando</span></em></span>
+      <span class="sm rv" style="--i:4">com software e</span>
+      <span class="bg rv" style="--i:6">inteligência<sup>&amp;</sup></span>
+      <span class="sm rv" style="--i:8">artificial, sob medida.</span>
+    </h1>
+    <p class="rv" style="--i:11">Aplicativos, sistemas e automações feitos para o seu negócio. Para vender mais, gastar menos e parar de perder tempo com o que um programa faz sozinho.</p>
+    <div class="row rv" style="--i:13"><a class="btn" href="#contato">Pedir orçamento</a><a class="btn ghost" href="#conta">Ver quanto custa não ter</a></div>
+  </div>
+</section>
+
+<section class="sec r" id="sob">
+  <div class="blk">
+    <span class="label rv">Sob medida</span>
+    <h2>Feito do <em>seu jeito.</em></h2>
+    <p class="rv">Nada de sistema pronto que você precisa adaptar. A gente desenha cada parte do seu processo e encaixa tudo para trabalhar junto.</p>
+    <p class="rv small">As esferas ao redor têm os tamanhos da sequência de Fibonacci: 8, 13, 21, 34 e 55.</p>
+  </div>
+</section>
+
+<section class="sec l">
+  <div class="blk">
+    <span class="label rv">Automação</span>
+    <h2>Um time que <em>nunca para.</em></h2>
+    <p class="rv">Atender, responder, orçar, organizar, avisar. O que se repete vira rotina automática, com inteligência artificial onde ela ajuda de verdade. Você e sua equipe ficam com o que dá dinheiro.</p>
+  </div>
+</section>
+
+<section class="sec r" id="conta">
+  <div class="blk">
+    <span class="label rv">A conta</span>
+    <h2>Quanto custa <em>continuar como está?</em></h2>
+    <div class="calc rv">
+      <label><span class="top2"><span>Horas por semana no trabalho repetitivo</span><output id="oh">10 h</output></span>
+        <input id="ch" type="range" min="1" max="40" value="10" aria-label="Horas por semana"></label>
+      <label>Quanto vale a sua hora (R$)<input id="cv" type="number" inputmode="numeric" min="0" step="5" value="40"></label>
+      <div class="res"><small>Você perde, por mês</small><strong id="rm">R$ 0</strong><small>São <b id="ry">R$ 0</b> por ano em trabalho que um sistema faz sozinho.</small></div>
+      <button class="btn" id="cc" type="button">Quero recuperar isso</button>
+    </div>
+    <p class="rv small">Um sistema sob medida se paga com o tempo que devolve. A gente faz essa conta com você antes de começar.</p>
+  </div>
+</section>
+
+<section class="sec l" id="feito">
+  <div class="blk">
+    <span class="label rv">O que construímos</span>
+    <h2>Se tem solução, <em>a gente programa.</em></h2>
+    <div class="list rv">
+      <div class="li"><i>01</i><b>Apps para a Google Play</b><span>Leves, rápidos e feitos para resolver uma coisa muito bem.</span></div>
+      <div class="li"><i>02</i><b>Inteligência artificial no seu negócio</b><span>Atendimento, textos, análises e rotinas no automático.</span></div>
+      <div class="li"><i>03</i><b>Sistemas sob medida</b><span>Do jeito que sua empresa trabalha, não o contrário.</span></div>
+      <div class="li"><i>04</i><b>Sites e automações</b><span>Que vendem e trabalham por você, 24 horas por dia.</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec r" id="contato">
+  <div class="blk">
+    <span class="label rv">Vamos começar</span>
+    <h2>Vamos tirar sua ideia <em>do papel?</em></h2>
+    <p class="rv">Conte em uma frase o que você precisa. A gente responde com o caminho mais curto e a conta na mesa.</p>
+    <div class="wa rv"><a id="wa" href="#" target="_blank" rel="noopener" aria-label="Falar com a Murinoi no WhatsApp" title="WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="wag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5ef2ff"/><stop offset=".55" stop-color="#8b7bff"/><stop offset="1" stop-color="#ff6fc8"/></linearGradient></defs><path fill="url(#wag)" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></a></div>
+    <div class="or rv">ou por e-mail</div>
+    <form id="f" class="rv">
+      <label>Sua ideia<textarea id="idea" name="idea" rows="2" required placeholder="Ex.: quero parar de responder os mesmos clientes todo dia"></textarea></label>
+      <label>Seu contato<input id="who" name="who" type="text" autocomplete="email" placeholder="e-mail ou WhatsApp"></label>
+      <button class="btn" type="submit">Enviar para a Murinoi</button>
+      <small>Abre o seu app de e-mail com a mensagem pronta. Se nada abrir, escreva para <span id="em">contato@murinoi.com</span>.</small>
+    </form>
+    <div class="foot rv"><span>© <span id="yr">2026</span> @murinoi.br · Todos os direitos reservados</span><a href="privacidade.html">Privacidade</a></div>
+  </div>
+</section>
+
 </main>
+
+<div id="track" aria-hidden="true"></div>
+<div class="cap" id="cap">© <span class="yr">2026</span> @murinoi.br · Todos os direitos reservados</div>
+<svg class="spi" id="spi" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="sg" x1="0" x2="1"><stop offset="0" stop-color="#5ef2ff"/><stop offset=".55" stop-color="#8b7bff"/><stop offset="1" stop-color="#ff6fc8"/></linearGradient></defs><path class="bg"/><path class="fg"/><circle r="2.8"/></svg>
+
+<script src="three.custom.js"></script>
+<script>
+/* ===== Configuração ===== */
+const EMAIL = 'contato@murinoi.com';
+/* WhatsApp: se você criar um link curto do WhatsApp Business (wa.me/message/...), cole em WHATSAPP_LINK
+   e o número deixa de existir no site. Enquanto isso, o número fica codificado e só é montado no clique. */
+const WHATSAPP_LINK = '';
+const WA_K = 'IyIkJSUuLy4uJSUiIg==';
+const LABELS = [
+  ['Fig. 00', 'fita de dados · ideia em movimento'],
+  ['Fig. 01', 'esferas em escala de Fibonacci'],
+  ['Fig. 02', 'fluxo contínuo · 24 horas'],
+  ['Fig. 03', 'a conta do tempo perdido'],
+  ['Fig. 04', 'cada esfera, uma solução'],
+  ['Fig. 05', 'espiral áurea · 137,5°']
+];
+/* ======================== */
+(() => {
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const root = document.documentElement; root.classList.add('js');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+const PHI = (1 + Math.sqrt(5)) / 2, GA = Math.PI * (3 - Math.sqrt(5));
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { x = clamp((x - a) / (b - a)); return x * x * (3 - 2 * x); };
+const ease = f => f * f * f * (f * (f * 6 - 15) + 10);
+const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+$('#yr').textContent = new Date().getFullYear(); $$('.yr').forEach(e => e.textContent = new Date().getFullYear()); $('#em').textContent = EMAIL;
+{ const wa = $('#wa'), msg = encodeURIComponent('Olá, Murinoi! Vim pelo site e quero conversar sobre uma ideia.');
+  const build = () => WHATSAPP_LINK || `https://wa.me/${[...atob(WA_K)].map(c => String.fromCharCode(c.charCodeAt(0) ^ 23)).reverse().join('')}?text=${msg}`;
+  wa.href = WHATSAPP_LINK || '#contato';
+  ['pointerdown', 'focus', 'keydown'].forEach(ev => wa.addEventListener(ev, () => { wa.href = build(); }, {once: true}));
+  wa.addEventListener('click', e => { if (!/^https/.test(wa.getAttribute('href'))) { e.preventDefault(); open(build(), '_blank', 'noopener'); } }); }
+
+/* ---------- texto ---------- */
+const secs = $$('.sec'), N = secs.length;
+function splitWords(el) {
+  let n = 0;
+  const walk = node => [...node.childNodes].forEach(c => {
+    if (c.nodeType === 3) {
+      const frag = document.createDocumentFragment();
+      c.textContent.split(/(\s+)/).forEach(t => {
+        if (!t) return;
+        if (/^\s+$/.test(t)) { frag.appendChild(document.createTextNode(' ')); return; }
+        const w = document.createElement('span'); w.className = 'w rv'; w.style.setProperty('--i', 1 + n++); w.textContent = t; frag.appendChild(w);
+      });
+      c.replaceWith(frag);
+    } else if (c.nodeType === 1) walk(c);
+  });
+  walk(el); return n;
+}
+secs.forEach(sec => {
+  const h = sec.querySelector('h2'); if (!h) return;
+  const n = splitWords(h);
+  sec.querySelectorAll('.rv').forEach((el, k) => { if (!el.classList.contains('w')) el.style.setProperty('--i', el.classList.contains('label') ? 0 : n + 2 + k * 2); });
+});
+
+/* ---------- formulário e calculadora ---------- */
+$('#f').addEventListener('submit', e => {
+  e.preventDefault();
+  const d = new FormData(e.target);
+  const body = `Olá, Murinoi!\n\nMinha ideia:\n${d.get('idea')}\n\nMeu contato:\n${d.get('who') || '(não informado)'}`;
+  location.href = `mailto:${EMAIL}?subject=${encodeURIComponent('Ideia para a Murinoi')}&body=${encodeURIComponent(body)}`;
+});
+const ch = $('#ch'), cvv = $('#cv'), oh = $('#oh'), rm = $('#rm'), ryy = $('#ry');
+const fmt = new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0});
+let shown = 0, goal = 0, craf = 0;
+function cstep() { shown += (goal - shown) * .18; if (Math.abs(goal - shown) < 1) { shown = goal; craf = 0; } else craf = requestAnimationFrame(cstep); rm.textContent = fmt.format(shown); }
+function calc() { const h = +ch.value, v = Math.max(0, +cvv.value || 0); oh.textContent = h + ' h'; goal = h * 4.33 * v; ryy.textContent = fmt.format(goal * 12); if (!craf) craf = requestAnimationFrame(cstep); }
+ch.addEventListener('input', calc); cvv.addEventListener('input', calc); calc();
+
+/* =====================================================================
+   CENA 3D — fita de dados iridescente, esferas em profundidade, espiral áurea
+   ===================================================================== */
+const cv = $('#gl');
+const Z = 12;                         // distância entre cenas
+const LZ = (N - 1) * Z + 26, Z0 = 10;  // comprimento da fita (z vai de Z0 até Z0 - LZ)
+function initScene() {
+  const T = window.THREE; if (!T) return null;
+  let renderer;
+  try { renderer = new T.WebGLRenderer({canvas: cv, antialias: false, powerPreference: 'high-performance'}); } catch (e) { console.error(e); return null; }
+  const PR = Math.min(devicePixelRatio || 1, coarse ? 1.25 : 1.5); renderer.setPixelRatio(PR);
+  renderer.toneMapping = T.NoToneMapping;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFShadowMap; renderer.shadowMap.autoUpdate = false;
+  const scene = new T.Scene(), BG = 0x05060d;
+  scene.background = new T.Color(BG); scene.fog = new T.FogExp2(BG, .035);
+  const camera = new T.PerspectiveCamera(34, 1, .1, 140);
+
+  /* ---- estúdio: softboxes coloridas refletidas nas superfícies ---- */
+  {
+    const pm = new T.PMREMGenerator(renderer), env = new T.Scene(); env.background = new T.Color(0x07081a);
+    const box = (w, h, pos, k, col) => { const m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({color: new T.Color(col).multiplyScalar(k), side: T.DoubleSide})); m.position.set(...pos); m.lookAt(0, 0, 0); env.add(m); };
+    box(18, 6, [0, 11, 5], 7, 0xf2f0ff);
+    box(5, 16, [-12, 1, 2], 6, 0x5ef2ff);
+    box(5, 16, [12, 0, 3], 6, 0xff6fc8);
+    box(16, 4, [0, -9, -4], 3, 0x8b7bff);
+    box(10, 10, [0, 2, -13], 1.6, 0x6a7cff);
+    box(9, 3, [0, -3, 12], 2.4, 0xffffff);
+    scene.environment = pm.fromScene(env, .04).texture; pm.dispose();
+  }
+
+  /* ---- luzes ---- */
+  const key = new T.DirectionalLight(0xf3eeff, 1.7); key.castShadow = true;
+  const SM = coarse ? 512 : 1024; key.shadow.mapSize.set(SM, SM);
+  Object.assign(key.shadow.camera, {left: -9, right: 9, top: 7, bottom: -7, near: 1, far: 40}); key.shadow.bias = -.0005; key.shadow.normalBias = .04; 
+  scene.add(key, key.target);
+  const cyanL = new T.PointLight(0x5ef2ff, 30, 0, 2), pinkL = new T.PointLight(0xff6fc8, 30, 0, 2); scene.add(cyanL, pinkL);
+  const curL = new T.PointLight(0xb9a8ff, 22, 0, 2); scene.add(curL);
+
+  /* ---- fita de dados: superfície ondulada iridescente ---- */
+  const SEG = coarse ? 220 : 300, ACR = 8, W = 2.2;
+  const rGeo = new T.PlaneGeometry(1, 1, SEG, ACR);
+  const rPos = rGeo.attributes.position, rNor = rGeo.attributes.normal, rUv = rGeo.attributes.uv, cols = new Float32Array(rPos.count * 3);
+  const C1 = new T.Color(0x5ef2ff), C2 = new T.Color(0x8b7bff), C3 = new T.Color(0xff6fc8), tc = new T.Color();
+  for (let k = 0; k < rPos.count; k++) { const u = rUv.getX(k), t = (u * 4.2) % 1, ph = t < .5 ? t * 2 : 2 - t * 2; tc.copy(C1).lerp(C2, clamp(ph * 2)).lerp(C3, clamp(ph * 2 - 1)); cols.set([tc.r, tc.g, tc.b], k * 3); }
+  rGeo.setAttribute('color', new T.BufferAttribute(cols, 3));
+  const ribbon = new T.Mesh(rGeo, new T.MeshStandardMaterial({vertexColors: true, color: 0xc4bdf2, roughness: .17, metalness: .45, side: T.DoubleSide, envMapIntensity: 1.15}));
+  ribbon.castShadow = true; ribbon.receiveShadow = true; ribbon.frustumCulled = false; scene.add(ribbon);
+  /* centro da fita em função de u∈[0,1] */
+  const center = (u, t, out) => { const L = u * LZ; out.set(Math.sin(L * .13) * 2.1 + Math.sin(L * .047 + 1) * 1.2, Math.sin(L * .21 + 1) * .7 - .5 + Math.sin(L * .55 - t * 1.1) * .32, Z0 - L); return out; };
+  const twist = (u, t) => Math.sin(u * LZ * .16 + t * .35) * 1.05;
+  const pA = new T.Vector3(), pB = new T.Vector3(), tg = new T.Vector3(), nm = new T.Vector3(), bn = new T.Vector3(), UP = new T.Vector3(0, 1, 0), sd = new T.Vector3();
+  function frameAt(u, t) { // centro, lateral e normal da superfície
+    center(u, t, pA); center(u + .0015, t, pB); tg.subVectors(pB, pA).normalize();
+    nm.crossVectors(tg, UP).normalize(); bn.crossVectors(nm, tg).normalize();
+    const th = twist(u, t), c = Math.cos(th), s = Math.sin(th);
+    sd.copy(nm).multiplyScalar(c).addScaledVector(bn, s);           // direção da largura
+    const nrm = new T.Vector3().copy(nm).multiplyScalar(-s).addScaledVector(bn, c); // normal "para cima" da fita
+    const top = nrm.y < 0 ? nrm.clone().negate() : nrm.clone();
+    return {p: pA.clone().addScaledVector(nrm, .12), side: sd.clone(), n: top, t: tg.clone()};
+  }
+  function updateRibbon(t) {
+    for (let i = 0; i <= SEG; i++) {
+      const u = i / SEG; center(u, t, pA); center(u + .0015, t, pB); tg.subVectors(pB, pA).normalize();
+      nm.crossVectors(tg, UP).normalize(); bn.crossVectors(nm, tg).normalize();
+      const th = twist(u, t), c = Math.cos(th), s = Math.sin(th), w = W * (.75 + .25 * Math.sin(u * LZ * .09 + 2));
+      for (let j = 0; j <= ACR; j++) {
+        const v = j / ACR - .5, k = j * (SEG + 1) + i, e = v * w, bend = Math.cos(v * Math.PI) * .12; // leve curvatura na largura
+        const sx = nm.x * c + bn.x * s, sy = nm.y * c + bn.y * s, sz = nm.z * c + bn.z * s, nx = -nm.x * s + bn.x * c, ny = -nm.y * s + bn.y * c, nz = -nm.z * s + bn.z * c;
+        rPos.setXYZ(k, pA.x + sx * e + nx * bend, pA.y + sy * e + ny * bend, pA.z + sz * e + nz * bend);
+        const tl = Math.sin(v * Math.PI) * .37; // inclinação da normal pela curvatura
+        rNor.setXYZ(k, nx + sx * tl, ny + sy * tl, nz + sz * tl);
+      }
+    }
+    rPos.needsUpdate = true; rNor.needsUpdate = true;
+  }
+
+  /* ---- materiais das esferas ---- */
+  const MATS = [
+    new T.MeshPhysicalMaterial({color: 0xff5fbf, roughness: .12, metalness: 0, clearcoat: 1, clearcoatRoughness: .03, envMapIntensity: 1.4}), // rosa laca
+    new T.MeshStandardMaterial({color: 0x52e8ff, roughness: .1, metalness: .9, envMapIntensity: 1.3}),                                  // ciano cromado
+    new T.MeshStandardMaterial({color: 0xe9e4ff, roughness: .26, metalness: .15, envMapIntensity: 1.25}),                               // pérola
+    new T.MeshStandardMaterial({color: 0x7f6bff, roughness: .16, metalness: .4, envMapIntensity: 1.3})                                  // roxo
+  ];
+  const sGeo = new T.SphereGeometry(1, 36, 22);
+
+  /* bolas que rolam sobre a fita, uma por cena */
+  const rollers = [];
+  for (let k = 0; k < N; k++) { const m = new T.Mesh(sGeo, MATS[[0, 1, 0, 3, 1, 0][k]]); const r = k === 0 ? .36 : .3; m.scale.setScalar(r); m.castShadow = true; m.receiveShadow = true; scene.add(m); rollers.push({m, r, u0: (Z0 - (-k * Z)) / LZ, ph: k * 1.7}); }
+
+  /* auréola translúcida atrás da bola principal (como um disco de vidro fosco iluminado) */
+  const halo = (() => { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), g = x.createRadialGradient(128, 128, 30, 128, 128, 128); g.addColorStop(0, 'rgba(139,123,255,.0)'); g.addColorStop(.55, 'rgba(139,123,255,.10)'); g.addColorStop(.86, 'rgba(180,170,255,.32)'); g.addColorStop(.9, 'rgba(230,225,255,.5)'); g.addColorStop(.94, 'rgba(160,150,255,.12)'); g.addColorStop(1, 'rgba(139,123,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 256, 256); const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; return t; })();
+  const halos = [0, N - 1].map(k => { const h = new T.Mesh(new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({map: halo, transparent: true, depthWrite: false, blending: T.AdditiveBlending, fog: false, color: new T.Color(1.6, 1.6, 1.6)})); h.scale.setScalar(k ? 7 : 5.4); scene.add(h); return {h, k}; });
+
+  /* 34 esferas (número de Fibonacci) flutuando em profundidade; no fim, formam uma espiral de girassol */
+  const FIB = [.08, .13, .21, .34, .55], floaters = [], R = rng(21);
+  const zEnd = -(N - 1) * Z;
+  for (let k = 0; k < 34; k++) {
+    const r = FIB[(R() * R() * 5) | 0] * (.9 + R() * .3), m = new T.Mesh(sGeo, MATS[k % 4]); m.scale.setScalar(r); scene.add(m);
+    const z = Z0 - 2 - R() * (LZ - 8), sideX = (R() < .5 ? -1 : 1) * (1.4 + R() * 4.5);
+    const q = .26 * Math.sqrt(k + 1), th = k * GA; // espiral áurea final
+    floaters.push({m, r, base: new T.Vector3(sideX, -2.2 + R() * 4.6, z), ph: R() * 6.28, sp: .3 + R() * .5, spiral: new T.Vector3(Math.cos(th) * q, Math.sin(th) * q, zEnd - .4 - k * .006), sr: .07 + (34 - k) * .0045});
+  }
+
+  /* ---- pós-processamento de cinema: profundidade de campo, brilho (bloom), aberração cromática, grão ---- */
+  const post = (() => {
+    const quad = new T.Mesh(new T.PlaneGeometry(2, 2)), sc = new T.Scene(), oc = new T.OrthographicCamera(-1, 1, 1, -1, 0, 1); sc.add(quad);
+    const vs = 'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}';
+    const mat = (fs, u, def) => new T.ShaderMaterial({vertexShader: vs, fragmentShader: (def || '') + fs, uniforms: u, depthTest: false, depthWrite: false});
+    const bright = mat(`uniform sampler2D tC;uniform vec2 uTx;varying vec2 vUv;
+      void main(){vec3 c=(texture2D(tC,vUv+uTx*vec2(-.5,-.5)).rgb+texture2D(tC,vUv+uTx*vec2(.5,-.5)).rgb+texture2D(tC,vUv+uTx*vec2(-.5,.5)).rgb+texture2D(tC,vUv+uTx*vec2(.5,.5)).rgb)*.25;
+      c=(c.r==c.r&&c.g==c.g&&c.b==c.b)?clamp(c,0.,4.):vec3(0.);float l=max(c.r,max(c.g,c.b));gl_FragColor=vec4(c*max(l-1.,0.)/max(l,1e-3)*.25,1.);}`, {tC: {value: null}, uTx: {value: new T.Vector2()}});
+    const blur = mat(`uniform sampler2D tC;uniform vec2 uDir;varying vec2 vUv;
+      void main(){vec3 s=texture2D(tC,vUv).rgb*.227;s+=(texture2D(tC,vUv+uDir*1.385).rgb+texture2D(tC,vUv-uDir*1.385).rgb)*.316;s+=(texture2D(tC,vUv+uDir*3.231).rgb+texture2D(tC,vUv-uDir*3.231).rgb)*.07;gl_FragColor=vec4(s,1.);}`, {tC: {value: null}, uDir: {value: new T.Vector2()}});
+    const comp = mat(`uniform sampler2D tC,tD,tB1,tB2;uniform vec2 uRes;uniform float uNear,uFar,uFocus,uAp,uMaxCoc,uCA,uTime,uGrain,uBloom,uVig,uExpo;varying vec2 vUv;
+      float lin(float d){float z=d*2.-1.;return 2.*uNear*uFar/(uFar+uNear-z*(uFar-uNear));}
+      float coc(vec2 uv){return clamp(abs(lin(texture2D(tD,uv).x)-uFocus)/uFocus*uAp,0.,1.)*uMaxCoc;}
+      vec3 aces(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.);}
+      float hash(vec2 p){p=fract(p*vec2(443.897,441.423));p+=dot(p,p.yx+19.19);return fract((p.x+p.y)*p.x);}
+      vec3 tap(vec2 uv,vec2 ca){vec3 c=vec3(texture2D(tC,uv+ca).r,texture2D(tC,uv).g,texture2D(tC,uv-ca).b);return (c.r==c.r&&c.g==c.g&&c.b==c.b)?clamp(c,0.,60.):vec3(0.);}
+      void main(){
+        vec2 uv=vUv,px=1./uRes,dir=uv-.5;
+        vec2 ca=dir*uCA*(.35+dot(dir,dir)*3.);
+        float c0=coc(uv);vec3 col;
+        if(c0<.6){col=tap(uv,ca);}else{
+          vec3 acc=vec3(0.);float ws=0.;
+          float jr=hash(uv*uRes)*6.2832;
+          for(int i=0;i<TAPS;i++){float fi=float(i)+.5,r=sqrt(fi/float(TAPS)),a=fi*2.39996+jr;
+            vec2 su=uv+vec2(cos(a),sin(a))*r*c0*px;float cs=coc(su);float w=cs+.5>=r*c0*.6?1.:.15;
+            acc+=tap(su,ca)*w;ws+=w;}
+          col=acc/ws;}
+        col+=texture2D(tB1,uv).rgb*5.6*uBloom;
+        col=aces(col*uExpo);col=pow(col,vec3(1./2.2));
+        col*=1.-uVig*dot(dir,dir)*1.7;
+        col+=(hash(uv*uRes+fract(uTime)*91.)-.5)*uGrain;
+        gl_FragColor=vec4(col,1.);}`,
+      {tC: {value: null}, tD: {value: null}, tB1: {value: null}, tB2: {value: null}, uRes: {value: new T.Vector2()}, uNear: {value: .1}, uFar: {value: 120}, uFocus: {value: 20}, uAp: {value: 1.1}, uMaxCoc: {value: 8}, uCA: {value: .0007}, uTime: {value: 0}, uGrain: {value: .05}, uBloom: {value: .4}, uVig: {value: .55}, uExpo: {value: 1.15}},
+      `#define TAPS ${coarse ? 7 : 12}\n`);
+    let main, A, B, C2, D2, noDof = false;
+    const ro = {type: T.UnsignedByteType, format: T.RGBAFormat, minFilter: T.LinearFilter, magFilter: T.LinearFilter, depthBuffer: false};
+    const mk = (w, h) => new T.WebGLRenderTarget(Math.max(2, w | 0), Math.max(2, h | 0), ro);
+    function size(w, h) {
+      [main, A, B, C2, D2].forEach(t => t && t.dispose());
+      const dt = new T.DepthTexture(w, h); dt.type = T.UnsignedIntType;
+      main = new T.WebGLRenderTarget(w, h, {type: T.HalfFloatType, format: T.RGBAFormat, minFilter: T.LinearFilter, magFilter: T.LinearFilter, depthTexture: dt, samples: 0});
+      C2 = mk(w / 4, h / 4); D2 = mk(w / 4, h / 4);
+      comp.uniforms.uRes.value.set(w, h);
+    }
+    const run = (m, target) => { quad.material = m; renderer.setRenderTarget(target); renderer.render(sc, oc); };
+    const bl = (src, dst, tmp, x, y) => { blur.uniforms.tC.value = src.texture; blur.uniforms.uDir.value.set(x / dst.width, 0); run(blur, tmp); blur.uniforms.tC.value = tmp.texture; blur.uniforms.uDir.value.set(0, y / dst.height); run(blur, dst); };
+    return {
+      size, off() { noDof = true; },
+      render(sceneRef, cameraRef, u) {
+        renderer.setRenderTarget(main); renderer.render(sceneRef, cameraRef);
+        /* brilho calculado direto em 1/4 da resolução: 3 passes pequenos em vez de 6 */
+        bright.uniforms.tC.value = main.texture; bright.uniforms.uTx.value.set(3 / main.width, 3 / main.height); run(bright, C2);
+        bl(C2, C2, D2, 1.3, 1.3); bl(C2, C2, D2, 2.2, 2.2);
+        const c = comp.uniforms; c.tC.value = main.texture; c.tD.value = main.depthTexture; c.tB1.value = C2.texture; c.tB2.value = C2.texture;
+        c.uNear.value = cameraRef.near; c.uFar.value = cameraRef.far; c.uFocus.value = u.focus; c.uCA.value = u.ca; c.uTime.value = u.time; c.uMaxCoc.value = noDof ? 0 : 6 * renderer.getPixelRatio();
+        run(comp, null);
+      }
+    };
+  })();
+
+  let W_ = 1, H_ = 1;
+  function resize(w, h) { W_ = w; H_ = h; renderer.setSize(w, h, false); camera.aspect = w / h; const pr = renderer.getPixelRatio(); post.size(Math.round(w * pr), Math.round(h * pr)); }
+  let frameN = 0;
+  const tmpP = new T.Vector3(), tmpT = new T.Vector3(), cA = new T.Vector3(), cB = new T.Vector3(), V3 = new T.Vector3();
+
+  function render(st) {
+    const {sE, f, i, time, d, narrow, aspect, px, py} = st;
+    const t = reduce ? 0 : time;
+    updateRibbon(t);
+    /* bolas rolando sobre a fita */
+    rollers.forEach((o, k) => {
+      const u = o.u0 + Math.sin(t * .35 + o.ph) * .012, fr = frameAt(u, t);
+      if (V3.subVectors(camera.position, fr.p).dot(fr.n) < 0) fr.n.negate(); // pousa na face que a câmera vê
+      o.m.position.copy(fr.p).addScaledVector(fr.n, o.r + .02).addScaledVector(fr.side, Math.sin(t * .5 + o.ph) * .25);
+      o.m.rotation.x = -t * 1.3 - k; o.m.rotation.z = t * .4;
+    });
+    halos.forEach(o => { const fr = frameAt(rollers[o.k].u0, t); o.h.position.copy(fr.p).add(V3.set(0, .9, -2.6)); o.h.lookAt(camera.position); });
+    /* esferas: flutuam e, na última cena, se organizam na espiral áurea */
+    const endM = sstep(3.9, 5, sE);
+    const endC = center(rollers[N - 1].u0, t, cB).clone().add(V3.set(0, 1.0, -1.2));
+    floaters.forEach((o, k) => {
+      const bob = Math.sin(t * o.sp + o.ph) * .35, e = ease(clamp(endM * 1.6 - k / 34 * .6));
+      cA.set(o.base.x + Math.cos(t * o.sp * .7 + o.ph) * .25, o.base.y + bob, o.base.z);
+      cB.copy(o.spiral).add(endC); cB.z = endC.z + o.spiral.z - zEnd;
+      o.m.position.lerpVectors(cA, cB, e); o.m.scale.setScalar(lerp(o.r, o.sr, e));
+    });
+    /* câmera voando ao lado da fita */
+    const zc = 6.4 - sE * Z, uc = clamp((Z0 - (zc - 6.4)) / LZ);
+    center(uc, t, tmpT); center(clamp((Z0 - zc) / LZ), t, cA);
+    const sideK = Math.sin(sE * 1.1) * 1.2 + 3.1;
+    tmpP.set(tmpT.x + sideK + (reduce ? 0 : Math.sin(time * .23) * .3) + px * .8, tmpT.y + 2.3 + (reduce ? 0 : Math.cos(time * .19) * .15) - py * .5, zc);
+    if (sE > 3.9) tmpT.add(V3.set(0, .9 * sstep(3.9, 5, sE), 0));
+    if (narrow) tmpP.sub(tmpT).multiplyScalar(1.35).add(tmpT);
+    camera.position.copy(tmpP); camera.lookAt(tmpT);
+    camera.fov = 34 * (aspect < 1 ? clamp(.8 / aspect, 1, 1.7) : aspect < 1.5 ? Math.sqrt(1.5 / aspect) : 1) + Math.min(8, Math.abs(d) * 14);
+    const k1 = f < .5 ? (i % 2 ? -1 : 1) * (1 - sstep(.08, .5, f)) : ((i + 1) % 2 ? -1 : 1) * sstep(.5, .92, f);
+    if (narrow) camera.setViewOffset(W_, H_, 0, H_ * .17, W_, H_); else camera.setViewOffset(W_, H_, -k1 * W_ * .22, 0, W_, H_);
+    /* luzes acompanham a câmera */
+    key.position.set(tmpT.x + 4, tmpT.y + 9, tmpT.z + 6); key.target.position.copy(tmpT);
+    cyanL.position.set(tmpT.x - 6, tmpT.y + 1, tmpT.z + 2); pinkL.position.set(tmpT.x + 6, tmpT.y - 1, tmpT.z - 1);
+    curL.position.set(tmpT.x + px * 7, tmpT.y - py * 4 + 1.5, tmpT.z + 3.5);
+    if ((++frameN & 1) === 0) renderer.shadowMap.needsUpdate = true;
+    post.render(scene, camera, {focus: camera.position.distanceTo(tmpT), ca: .0008 + Math.min(.004, Math.abs(d) * .012), time});
+  }
+  return {resize, render, lowerQuality(l) { if (l === 1) { renderer.setPixelRatio(1); resize(W_, H_); } if (l === 2) post.off(); if (l === 3) { renderer.shadowMap.enabled = false; scene.traverse(o => { if (o.material) o.material.needsUpdate = true; }); } if (l === 4) { renderer.setPixelRatio(.75); resize(W_, H_); } }};
+}
+let R = null;
+try { R = initScene(); } catch (e) { console.error(e); R = null; }
+if (!R) root.classList.add('nogl');
+
+/* ---------- rolagem ---------- */
+const track = $('#track'); track.style.setProperty('--n', N);
+const stops = secs.map((_, i) => { const d = document.createElement('div'); d.className = 'stop'; d.style.top = `calc(${i} * var(--sh))`; track.appendChild(d); return d; });
+let tops = [], aspect = 1, narrow = false;
+function resize() {
+  const w = cv.clientWidth, h = cv.clientHeight; aspect = w / h; narrow = aspect < 1;
+  root.classList.toggle('narrow', narrow);
+  if (R) R.resize(w, h);
+  tops = stops.map(s => s.offsetTop);
+}
+function scrollPos() {
+  const y = scrollY + 1; let i = 0; while (i < N - 1 && y >= tops[i + 1]) i++;
+  if (i >= N - 1) return N - 1; return i + clamp((y - tops[i]) / (tops[i + 1] - tops[i]));
+}
+const goTo = i => scrollTo({top: tops[i], behavior: reduce ? 'auto' : 'smooth'});
+const IDX = {'#topo': 0, '#sob': 1, '#conta': 3, '#feito': 4, '#contato': N - 1};
+$$('a[href^="#"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); goTo(IDX[a.getAttribute('href')] || 0); }));
+$('#cc').addEventListener('click', () => { $('#idea').value = `Hoje perco cerca de ${ch.value}h por semana em tarefas repetitivas (≈ ${fmt.format(goal)} por mês). Quero automatizar isso.`; goTo(N - 1); });
+
+/* espiral áurea como indicador de progresso */
+const spi = $('#spi'), pBg = spi.querySelector('.bg'), pFg = spi.querySelector('.fg'), pDot = spi.querySelector('circle');
+let spLen = 1;
+(() => {
+  const pts = []; for (let k = 0; k <= 220; k++) { const th = k / 220 * 3 * Math.PI, r = Math.pow(PHI, 2 * th / Math.PI); pts.push([r * Math.cos(th), r * Math.sin(th)]); }
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), sc = 88 / Math.max(x1 - x0, y1 - y0);
+  const d = pts.map((p, k) => (k ? 'L' : 'M') + ((p[0] - x0) * sc + 6).toFixed(1) + ' ' + ((p[1] - y0) * sc + 6).toFixed(1)).join('');
+  pBg.setAttribute('d', d); pFg.setAttribute('d', d); spLen = pFg.getTotalLength(); pFg.style.strokeDasharray = spLen;
+})();
+function setCap() {}
+
+let tpx = 0, tpy = 0, ppx = 0, ppy = 0;
+addEventListener('pointermove', e => { tpx = e.clientX / innerWidth * 2 - 1; tpy = e.clientY / innerHeight * 2 - 1; }, {passive: true});
+
+let sS = 0, last = performance.now(), time = 0, frames = 0, booted = false, ema = 16, lvl = 0, slow = 0, act = -1;
+const GOV = !/[?&]hq/.test(location.search);
+resize(); addEventListener('resize', resize); addEventListener('load', resize);
+const boot = $('#boot');
+function hideBoot() { if (booted) return; booted = true; boot.classList.add('off'); }
+setTimeout(hideBoot, 4500);
+
+function frame(now) {
+  const raw = Math.min(.5, (now - last) / 1000), dt = Math.min(.05, raw); last = now; time += dt;
+  const target = scrollPos(), d = target - sS;
+  sS += reduce ? d : d * (1 - Math.exp(-raw * 6.5));
+  sS = clamp(sS, 0, N - 1);
+  const i = Math.min(N - 1, Math.floor(sS + 1e-4)), f = i >= N - 1 ? 0 : sS - i;
+  const sE = i + ease(f);
+  ppx += (tpx - ppx) * .05; ppy += (tpy - ppy) * .05;
+  secs.forEach((el, k) => {
+    const dd = sE - k, ad = Math.abs(dd), vis = ad < .7, on = ad < .5;
+    if (vis !== el._v) { el._v = vis; el.classList.toggle('vis', vis); }
+    if (on !== el._o) { el._o = on; el.classList.toggle('on', on); }
+    if (vis) {
+      el.style.opacity = clamp(1 - Math.max(0, ad - .12) * 2.3);
+      el.style.transform = reduce ? 'none' : `perspective(1100px) translate3d(0,${dd * -46}px,${dd * 300}px)`;
+    }
+  });
+  const a = Math.round(sE); if (a !== act) { act = a; setCap(a); }
+  pFg.style.strokeDashoffset = spLen * (1 - sE / (N - 1));
+  const pt = pFg.getPointAtLength(spLen * clamp(sE / (N - 1))); pDot.setAttribute('cx', pt.x); pDot.setAttribute('cy', pt.y);
+  if (R) {
+    R.render({sE, f, i, time, d, narrow, aspect, px: ppx, py: ppy});
+    if (++frames === 3) hideBoot();
+    ema = ema * .95 + raw * 1000 * .05;
+    if (GOV && frames > 60 && ema > 24 && lvl < 4) { if (++slow > 40) { slow = 0; ema = 16; R.lowerQuality(++lvl); } } else slow = 0;
+  } else hideBoot();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
 </body>
 </html>
