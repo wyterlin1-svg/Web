@@ -12,13 +12,15 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=Michroma&display=swap">
 <style>
 :root{
   color-scheme:dark;
   --bg:#05060d;--fg:#eef2ff;--body:#b9c1da;--mute:#7f89a8;--line:rgba(190,205,255,.16);--panel:rgba(10,12,26,.84);
   --c1:#5ef2ff;--c2:#8b7bff;--c3:#ff6fc8;
   --grad:linear-gradient(90deg,var(--c1),var(--c2) 55%,var(--c3));
+  --gold:linear-gradient(100deg,#fbe6a2,#d9a94a 35%,#9c7127 60%,#e8c26a 80%,#b8862f);
+  --brand:"Michroma","Eurostile","Jost",sans-serif;
   --sans:"Jost","Futura","Century Gothic",system-ui,-apple-system,sans-serif;
   /* Fibonacci: 8 13 21 34 55 89 144 */
   --f1:8px;--f2:13px;--f3:21px;--f4:34px;--f5:55px;--f6:89px;--f7:144px;
@@ -36,15 +38,29 @@ em .w{background:var(--grad);-webkit-background-clip:text;background-clip:text;c
 /* abertura */
 #boot{position:fixed;inset:0;z-index:20;background:var(--bg);display:grid;place-items:center;transition:opacity 1s .2s,visibility 0s 1.2s}
 #boot.off{opacity:0;visibility:hidden;pointer-events:none}
-#boot b{font:300 1.75rem var(--sans);letter-spacing:.04em}
-#boot i{display:block;width:89px;height:1px;margin:var(--f2) auto 0;background:var(--line);overflow:hidden;position:relative}
-#boot i::after{content:"";position:absolute;inset:0;background:var(--grad);animation:ld 1.4s ease-in-out infinite}
+#boot{background:radial-gradient(circle at 50% 46%,#141416 0,#0b0b0d 38%,var(--bg) 75%)}
+#boot>div{display:grid;justify-items:center}
+#boot img{width:min(62vw,340px);height:auto;border-radius:6px;-webkit-mask-image:radial-gradient(farthest-side,#000 78%,transparent);mask-image:radial-gradient(farthest-side,#000 78%,transparent);animation:bin 1.6s cubic-bezier(.2,.7,.2,1) both;filter:drop-shadow(0 0 34px rgba(217,169,74,.25))}
+#boot.off img{transform:scale(1.25);transition:transform 1.2s cubic-bezier(.5,0,.2,1)}
+@keyframes bin{from{opacity:0;transform:scale(.92);filter:blur(8px)}to{opacity:1;transform:none;filter:drop-shadow(0 0 34px rgba(217,169,74,.25))}}
+#boot i{display:block;width:89px;height:1px;margin:var(--f3) auto 0;background:rgba(217,169,74,.2);overflow:hidden;position:relative}
+#boot i::after{content:"";position:absolute;inset:0;background:var(--gold);animation:ld 1.4s ease-in-out infinite}
 @keyframes ld{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 
 /* topo */
 .top{position:fixed;left:0;right:0;top:0;z-index:6;display:flex;justify-content:space-between;align-items:center;padding:var(--f4) clamp(21px,5.5vw,89px) var(--f3);padding-top:calc(var(--f4) + env(safe-area-inset-top))}
-.logo{font:400 1.75rem/1 var(--sans);letter-spacing:-.01em;text-decoration:none;display:flex;align-items:center;gap:6px}
-.logo i{width:8px;height:8px;border-radius:50%;background:var(--grad);box-shadow:0 0 13px var(--c2)}
+.logo{text-decoration:none;display:flex;align-items:center;gap:12px}
+.logo .lm{width:62px;height:41px;filter:drop-shadow(0 0 10px rgba(217,169,74,.25))}
+.logo span{display:grid;line-height:1}
+.logo b{font:400 1.25rem var(--brand);letter-spacing:.2em;background:var(--gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo small{font:400 .5625rem var(--brand);letter-spacing:.32em;color:#b8955a;margin-top:6px;display:flex;align-items:center;gap:6px}
+.logo small::before,.logo small::after{content:"";width:12px;height:1px;background:#8a6a35}
+.narrow .logo{gap:8px}
+.narrow .logo .lm{width:42px;height:28px}
+.narrow .logo b{font-size:.8125rem;letter-spacing:.14em}
+.narrow .logo small{font-size:.5rem;margin-top:4px}
+.narrow .hm{display:none}
+.narrow .nav .cta{padding:8px 14px;font-size:.875rem}
 .nav{display:flex;align-items:center;gap:var(--f4);font-weight:400;font-size:1rem}
 .nav a{text-decoration:none;color:var(--body);transition:color .3s}
 .nav a:hover{color:var(--fg)}
@@ -189,18 +205,18 @@ small{color:var(--mute);font-size:.8125rem}
 .narrow .label{margin-bottom:var(--f3)}
 
 .nogl body{background:radial-gradient(circle at 70% 30%,#1a1640,var(--bg) 60%) fixed}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.js .rv{transition-duration:.01s;filter:none}.side.rgt s,#boot i::after{animation:none}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.js .rv{transition-duration:.01s;filter:none}.side.rgt s,#boot i::after,#boot img{animation:none}}
 :focus-visible{outline:2px solid var(--c1);outline-offset:3px;border-radius:4px}
 </style>
 </head>
 <body>
 <canvas id="gl" aria-hidden="true"></canvas>
 <div id="vig"></div>
-<div id="boot"><div><b>murinoi</b><i></i></div></div>
+<div id="boot"><div><img src="marca.jpg" alt="Murinoi (BR)" width="480" height="472"><i></i></div></div>
 
 <header class="top">
-  <a class="logo" href="#topo" aria-label="Murinoi — início">murinoi<i></i></a>
-  <nav class="nav" aria-label="Principal"><a href="#sob">Toda ideia</a><a href="#conta">Monte sua ideia</a><a href="#feito">O que fazemos</a><a class="cta" href="#contato">Contar minha ideia</a></nav>
+  <a class="logo" href="#topo" aria-label="Murinoi — início"><svg viewBox="0 0 100 66" class="lm" aria-hidden="true"><defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe6a2"/><stop offset=".35" stop-color="#d9a94a"/><stop offset=".6" stop-color="#9c7127"/><stop offset=".8" stop-color="#e8c26a"/><stop offset="1" stop-color="#b8862f"/></linearGradient></defs><g fill="url(#hg)"><path d="M14 6 L22 6 L49 43 L45 49 L21 16 L21 55 L14 55 Z"/><path d="M67 14 L75 3 L75 47 L66 57 L58 57 L67 48 Z"/><path d="M12 64 Q50 46 90 64 Q50 51.5 12 64 Z"/></g><g fill="none" stroke="url(#hg)" stroke-width="1.1"><path d="M46 57 L61 36"/><circle cx="62.2" cy="34.4" r="1.6"/><path d="M75 24 L79 24 L79 18"/><circle cx="79" cy="16.4" r="1.4"/><path d="M75 34 L81 34"/><circle cx="82.6" cy="34" r="1.4"/><path d="M74 44 L78 44 L82 40 L86 40"/><circle cx="87.6" cy="40" r="1.4"/><path d="M70 54 L76 54 L81 49 L85 49"/><circle cx="86.6" cy="49" r="1.4"/></g></svg><span><b>MURINOI</b><small>(BR)</small></span></a>
+  <nav class="nav" aria-label="Principal"><a href="#sob">Toda ideia</a><a href="#conta">Monte sua ideia</a><a href="#feito">O que fazemos</a><a class="cta" href="#contato">Contar <span class="hm">minha </span>ideia</a></nav>
 </header>
 <div class="side lft" aria-hidden="true"><span>Apps</span><s></s><span>Inteligência artificial</span><s></s><span>Sistemas</span></div>
 <div class="side rgt" aria-hidden="true"><span>Role</span><s></s></div>
@@ -656,7 +672,7 @@ function frame(now) {
   const pt = pFg.getPointAtLength(spLen * clamp(sE / (N - 1))); pDot.setAttribute('cx', pt.x); pDot.setAttribute('cy', pt.y);
   if (R) {
     R.render({sE, f, i, time, d, narrow, aspect, px: ppx, py: ppy});
-    if (++frames === 3) hideBoot();
+    if (++frames === 3) setTimeout(hideBoot, Math.max(0, 1500 - performance.now()));
     ema = ema * .95 + raw * 1000 * .05;
     if (GOV && frames > 60 && ema > 24 && lvl < 4) { if (++slow > 40) { slow = 0; ema = 16; R.lowerQuality(++lvl); } } else slow = 0;
   } else hideBoot();
