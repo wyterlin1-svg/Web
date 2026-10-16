@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Murinoi — sua ideia, funcionando</title>
-<meta name="description" content="A Murinoi cria aplicativos, sistemas e automações com inteligência artificial, sob medida para o seu negócio.">
+<title>Murinoi — sua ideia, realidade</title>
+<meta name="description" content="A Murinoi desenvolve soluções inteligentes sob medida: aplicativos, sistemas, sites, automações e inteligência artificial. Toda ideia é uma boa ideia.">
 <meta name="theme-color" content="#05060d">
 <meta property="og:title" content="Murinoi — sua ideia, funcionando">
-<meta property="og:description" content="Software e inteligência artificial sob medida. Para vender mais, gastar menos e parar de perder tempo.">
+<meta property="og:description" content="Desenvolvimento de soluções inteligentes, sob medida. Se você imaginou, hoje dá para construir.">
 <meta property="og:type" content="website">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,7 +62,7 @@ em .w{background:var(--grad);-webkit-background-clip:text;background-clip:text;c
 
 /* seções: camadas que chegam do fundo */
 main{position:relative;z-index:2}
-.sec{min-height:100vh;min-height:100svh;display:flex;align-items:flex-start;padding:var(--f6) clamp(55px,8.5vw,144px)}
+.sec{min-height:100vh;min-height:100svh;display:flex;align-items:flex-start;padding:var(--f6) clamp(55px,8.5vw,144px) 110px}
 .js .sec{position:fixed;inset:0;opacity:0;visibility:hidden;pointer-events:none;will-change:transform,opacity;overflow-y:auto;overscroll-behavior:contain}
 .js .sec.vis{visibility:visible}
 .js .sec.on{pointer-events:auto}
@@ -72,6 +72,8 @@ main{position:relative;z-index:2}
 .blk{width:clamp(21rem,38.2vw,36rem);margin:auto 0}
 #contato h2,#conta h2{font-size:clamp(2.2rem,3.6vw,3.236rem)}
 #conta .calc{gap:var(--f2);padding:var(--f3) var(--f4)}
+#conta .label{margin-bottom:var(--f3)}
+#conta .calc{margin-top:var(--f3)}
 #contato form{gap:var(--f2)}
 .label{display:flex;align-items:center;gap:var(--f3);font:400 .875rem var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--body);margin-bottom:var(--f4)}
 .label::after{content:"";width:55px;height:1px;background:var(--grad)}
@@ -91,10 +93,15 @@ h2{font:300 clamp(2.4rem,4.6vw,4.236rem)/1.04 var(--sans);letter-spacing:-.02em}
 .btn.ghost:hover{border-color:var(--fg)}
 .row{display:flex;gap:var(--f2);flex-wrap:wrap;margin-top:var(--f4)}
 
-.list{margin-top:var(--f4);border-top:1px solid var(--line)}
-.li{padding:var(--f3) 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;column-gap:var(--f3)}
+.list{margin-top:var(--f4);border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;column-gap:var(--f4)}
+#feito .blk{width:clamp(21rem,46vw,44rem)}
+.narrow .list{grid-template-columns:1fr}
+.li{align-content:start}
+#feito::before{background:linear-gradient(90deg,rgba(5,6,13,.9) 0,rgba(5,6,13,.78) 50%,transparent 72%)}
+.narrow #feito::before{background:linear-gradient(to top,rgba(5,6,13,.97) 0,rgba(5,6,13,.88) 50%,transparent 80%)}
+.li{padding:var(--f2) 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;column-gap:var(--f3)}
 .li i{font:400 .8125rem var(--sans);color:var(--c1);letter-spacing:.1em;padding-top:8px}
-.li b{display:block;font:400 1.5rem/1.15 var(--sans);letter-spacing:-.01em}
+.li b{display:block;font:400 1.3rem/1.15 var(--sans);letter-spacing:-.01em}
 .li span{color:var(--mute);font-size:.9375rem;grid-column:2}
 
 /* calculadora */
@@ -105,9 +112,18 @@ h2{font:300 clamp(2.4rem,4.6vw,4.236rem)/1.04 var(--sans);letter-spacing:-.02em}
 input[type=range]{-webkit-appearance:none;appearance:none;height:2px;padding:0;border:0;border-radius:2px;background:var(--grad);outline-offset:10px;width:100%}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 0 0 5px rgba(139,123,255,.25),0 0 21px var(--c2);cursor:pointer}
 input[type=range]::-moz-range-thumb{width:21px;height:21px;border:0;border-radius:50%;background:#fff;box-shadow:0 0 0 5px rgba(139,123,255,.25),0 0 21px var(--c2);cursor:pointer}
+.pick{display:grid;gap:var(--f1)}
+.pick small{font-size:.875rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:400 .9375rem var(--sans);color:var(--body);background:transparent;border:1px solid var(--line);border-radius:999px;padding:7px 15px;cursor:pointer;transition:color .25s,border-color .25s,background .25s}
+.chip:hover{color:var(--fg);border-color:var(--c2)}
+.chip.on{color:#08091a;border-color:transparent;background:var(--grad)}
+.steps{list-style:none;counter-reset:st;display:grid;gap:6px;margin-top:var(--f2)}
+.steps li{counter-increment:st;display:grid;grid-template-columns:auto 1fr;gap:var(--f2);color:var(--body);font-size:.9375rem;line-height:1.5}
+.steps li::before{content:"0" counter(st);color:var(--c1);font-size:.8125rem;letter-spacing:.08em;padding-top:2px}
 .res{padding-top:var(--f3);border-top:1px solid var(--line)}
 .res small{display:block;font:400 .875rem var(--sans);color:var(--mute)}
-.res strong{display:block;font:300 clamp(3rem,6vw,4.236rem)/1.05 var(--sans);letter-spacing:-.03em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums;margin:var(--f1) 0}
+.res strong{display:block;font:300 clamp(1.5rem,2.4vw,2rem)/1.15 var(--sans);letter-spacing:-.03em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums;margin:var(--f1) 0}
 .res b{color:var(--fg);font-weight:500}
 
 .wa{display:flex;align-items:center;gap:var(--f2);margin-top:var(--f4);flex-wrap:wrap}
@@ -158,13 +174,18 @@ small{color:var(--mute);font-size:.8125rem}
 .narrow h2{font-size:clamp(2.2rem,10vw,3rem)}
 .narrow .row{margin-top:var(--f3)}
 .narrow .calc{margin-top:var(--f3);padding:var(--f3);gap:var(--f2)}
-.narrow .res strong{font-size:clamp(2.6rem,12vw,3.4rem)}
+.narrow .res strong{font-size:clamp(1.5rem,7vw,1.9rem)}
+.narrow .chip{padding:6px 12px;font-size:.875rem}
+.narrow .steps{gap:4px}
+.narrow .steps li{font-size:.875rem}
 .narrow .small{display:none}
 .narrow .side{display:none}
 .narrow .cap{display:none}
 .narrow .spi{bottom:auto;top:calc(var(--f6) - 8px);right:var(--f3);width:42px;height:42px}
 .narrow .li{padding:var(--f2) 0}
-.narrow .li b{font-size:1.25rem}
+.narrow .li b{font-size:1.125rem}
+.narrow .li span{font-size:.875rem}
+.narrow .li{padding:10px 0}
 .narrow .label{margin-bottom:var(--f3)}
 
 .nogl body{background:radial-gradient(circle at 70% 30%,#1a1640,var(--bg) 60%) fixed}
@@ -179,7 +200,7 @@ small{color:var(--mute);font-size:.8125rem}
 
 <header class="top">
   <a class="logo" href="#topo" aria-label="Murinoi — início">murinoi<i></i></a>
-  <nav class="nav" aria-label="Principal"><a href="#sob">Sob medida</a><a href="#conta">A conta</a><a href="#feito">O que fazemos</a><a class="cta" href="#contato">Pedir orçamento</a></nav>
+  <nav class="nav" aria-label="Principal"><a href="#sob">Toda ideia</a><a href="#conta">Monte sua ideia</a><a href="#feito">O que fazemos</a><a class="cta" href="#contato">Contar minha ideia</a></nav>
 </header>
 <div class="side lft" aria-hidden="true"><span>Apps</span><s></s><span>Inteligência artificial</span><s></s><span>Sistemas</span></div>
 <div class="side rgt" aria-hidden="true"><span>Role</span><s></s></div>
@@ -190,57 +211,61 @@ small{color:var(--mute);font-size:.8125rem}
   <div class="blk">
     <h1 class="stack">
       <span class="sm rv" style="--i:0">Sua ideia</span>
-      <span class="bg rv" style="--i:2"><em><span class="w">funcionando</span></em></span>
-      <span class="sm rv" style="--i:4">com software e</span>
-      <span class="bg rv" style="--i:6">inteligência<sup>&amp;</sup></span>
-      <span class="sm rv" style="--i:8">artificial, sob medida.</span>
+      <span class="bg rv" style="--i:2"><em><span class="w">realidade</span></em></span>
+      <span class="sm rv" style="--i:4">com desenvolvimento de</span>
+      <span class="bg rv" style="--i:6">soluções<sup>&amp;</sup></span>
+      <span class="sm rv" style="--i:8">inteligentes, sob medida.</span>
     </h1>
-    <p class="rv" style="--i:11">Aplicativos, sistemas e automações feitos para o seu negócio. Para vender mais, gastar menos e parar de perder tempo com o que um programa faz sozinho.</p>
-    <div class="row rv" style="--i:13"><a class="btn" href="#contato">Pedir orçamento</a><a class="btn ghost" href="#conta">Ver quanto custa não ter</a></div>
+    <p class="rv" style="--i:11">Apps, sistemas, sites, automações e inteligência artificial. Se você imaginou, hoje dá para construir. E a gente constrói.</p>
+    <div class="row rv" style="--i:13"><a class="btn" href="#contato">Contar minha ideia</a><a class="btn ghost" href="#conta">Montar minha ideia</a></div>
   </div>
 </section>
 
 <section class="sec r" id="sob">
   <div class="blk">
-    <span class="label rv">Sob medida</span>
-    <h2>Feito do <em>seu jeito.</em></h2>
-    <p class="rv">Nada de sistema pronto que você precisa adaptar. A gente desenha cada parte do seu processo e encaixa tudo para trabalhar junto.</p>
+    <span class="label rv">Toda ideia</span>
+    <h2>Toda ideia é uma <em>boa ideia.</em></h2>
+    <p class="rv">Um app para o seu bairro, um sistema para a sua empresa, uma ferramenta que ainda não existe. A tecnologia de hoje torna possível o que ontem parecia longe. A gente escuta, desenha e entrega.</p>
     <p class="rv small">As esferas ao redor têm os tamanhos da sequência de Fibonacci: 8, 13, 21, 34 e 55.</p>
   </div>
 </section>
 
 <section class="sec l">
   <div class="blk">
-    <span class="label rv">Automação</span>
-    <h2>Um time que <em>nunca para.</em></h2>
-    <p class="rv">Atender, responder, orçar, organizar, avisar. O que se repete vira rotina automática, com inteligência artificial onde ela ajuda de verdade. Você e sua equipe ficam com o que dá dinheiro.</p>
+    <span class="label rv">Soluções inteligentes</span>
+    <h2>Não é só IA. É <em>engenharia de soluções.</em></h2>
+    <p class="rv">Programação, dados, automação, design e inteligência artificial, cada peça escolhida para o seu problema. Às vezes a resposta é IA. Às vezes é um app simples e muito bem feito. O que importa é funcionar.</p>
   </div>
 </section>
 
 <section class="sec r" id="conta">
   <div class="blk">
-    <span class="label rv">A conta</span>
-    <h2>Quanto custa <em>continuar como está?</em></h2>
+    <span class="label rv">Monte sua ideia</span>
+    <h2>Escolha e veja <em>como fica.</em></h2>
     <div class="calc rv">
-      <label><span class="top2"><span>Horas por semana no trabalho repetitivo</span><output id="oh">10 h</output></span>
-        <input id="ch" type="range" min="1" max="40" value="10" aria-label="Horas por semana"></label>
-      <label>Quanto vale a sua hora (R$)<input id="cv" type="number" inputmode="numeric" min="0" step="5" value="40"></label>
-      <div class="res"><small>Você perde, por mês</small><strong id="rm">R$ 0</strong><small>São <b id="ry">R$ 0</b> por ano em trabalho que um sistema faz sozinho.</small></div>
-      <button class="btn" id="cc" type="button">Quero recuperar isso</button>
+      <div class="pick"><small>O que você quer criar?</small><div class="chips" id="pk1">
+        <button type="button" class="chip on" data-v="app">App</button><button type="button" class="chip" data-v="sis">Sistema</button><button type="button" class="chip" data-v="site">Site ou loja</button><button type="button" class="chip" data-v="auto">Automação</button><button type="button" class="chip" data-v="ia">Com IA</button><button type="button" class="chip" data-v="nova">Algo novo</button>
+      </div></div>
+      <div class="pick"><small>Para quem?</small><div class="chips" id="pk2">
+        <button type="button" class="chip on" data-v="eu">Para mim</button><button type="button" class="chip" data-v="emp">Para minha empresa</button><button type="button" class="chip" data-v="pub">Para muita gente</button>
+      </div></div>
+      <div class="res"><small>Como a gente faria</small><strong id="bt">Um app sob medida</strong><ol class="steps" id="bs"></ol></div>
+      <button class="btn" id="cc" type="button">Quero criar isso</button>
     </div>
-    <p class="rv small">Um sistema sob medida se paga com o tempo que devolve. A gente faz essa conta com você antes de começar.</p>
   </div>
 </section>
 
 <section class="sec l" id="feito">
   <div class="blk">
-    <span class="label rv">O que construímos</span>
-    <h2>Se tem solução, <em>a gente programa.</em></h2>
+    <span class="label rv">O que desenvolvemos</span>
+    <h2>Se dá para imaginar, <em>dá para criar.</em></h2>
     <div class="list rv">
-      <div class="li"><i>01</i><b>Apps para a Google Play</b><span>Leves, rápidos e feitos para resolver uma coisa muito bem.</span></div>
-      <div class="li"><i>02</i><b>Inteligência artificial no seu negócio</b><span>Atendimento, textos, análises e rotinas no automático.</span></div>
-      <div class="li"><i>03</i><b>Sistemas sob medida</b><span>Do jeito que sua empresa trabalha, não o contrário.</span></div>
-      <div class="li"><i>04</i><b>Sites e automações</b><span>Que vendem e trabalham por você, 24 horas por dia.</span></div>
+      <div class="li"><i>01</i><b>Aplicativos</b><span>Para Android e Google Play, leves e rápidos.</span></div>
+      <div class="li"><i>02</i><b>Sistemas sob medida</b><span>Do jeito que você trabalha, não o contrário.</span></div>
+      <div class="li"><i>03</i><b>Sites e lojas virtuais</b><span>Rápidos, bonitos e feitos para vender.</span></div>
+      <div class="li"><i>04</i><b>Automação e integrações</b><span>Ferramentas conversando entre si, sem trabalho manual.</span></div>
+      <div class="li"><i>05</i><b>Inteligência artificial</b><span>Atendimento, análise, visão e linguagem, onde fizer sentido.</span></div>
+      <div class="li"><i>06</i><b>Projetos inéditos</b><span>O que ainda não tem nome. A gente cria.</span></div>
     </div>
   </div>
 </section>
@@ -248,12 +273,12 @@ small{color:var(--mute);font-size:.8125rem}
 <section class="sec r" id="contato">
   <div class="blk">
     <span class="label rv">Vamos começar</span>
-    <h2>Vamos tirar sua ideia <em>do papel?</em></h2>
-    <p class="rv">Conte em uma frase o que você precisa. A gente responde com o caminho mais curto e a conta na mesa.</p>
+    <h2>Qual é a <em>sua ideia?</em></h2>
+    <p class="rv">Conte do seu jeito, mesmo que ela ainda esteja no começo. A gente responde com o caminho, o prazo e o investimento.</p>
     <div class="wa rv"><a id="wa" href="#" target="_blank" rel="noopener" aria-label="Falar com a Murinoi no WhatsApp" title="WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="wag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5ef2ff"/><stop offset=".55" stop-color="#8b7bff"/><stop offset="1" stop-color="#ff6fc8"/></linearGradient></defs><path fill="url(#wag)" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></a></div>
     <div class="or rv">ou por e-mail</div>
     <form id="f" class="rv">
-      <label>Sua ideia<textarea id="idea" name="idea" rows="2" required placeholder="Ex.: quero parar de responder os mesmos clientes todo dia"></textarea></label>
+      <label>Sua ideia<textarea id="idea" name="idea" rows="2" required placeholder="Ex.: um app que avisa quando o ônibus está chegando"></textarea></label>
       <label>Seu contato<input id="who" name="who" type="text" autocomplete="email" placeholder="e-mail ou WhatsApp"></label>
       <button class="btn" type="submit">Enviar para a Murinoi</button>
       <small>Abre o seu app de e-mail com a mensagem pronta. Se nada abrir, escreva para <span id="em">contato@murinoi.com</span>.</small>
@@ -333,12 +358,28 @@ $('#f').addEventListener('submit', e => {
   const body = `Olá, Murinoi!\n\nMinha ideia:\n${d.get('idea')}\n\nMeu contato:\n${d.get('who') || '(não informado)'}`;
   location.href = `mailto:${EMAIL}?subject=${encodeURIComponent('Ideia para a Murinoi')}&body=${encodeURIComponent(body)}`;
 });
-const ch = $('#ch'), cvv = $('#cv'), oh = $('#oh'), rm = $('#rm'), ryy = $('#ry');
-const fmt = new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0});
-let shown = 0, goal = 0, craf = 0;
-function cstep() { shown += (goal - shown) * .18; if (Math.abs(goal - shown) < 1) { shown = goal; craf = 0; } else craf = requestAnimationFrame(cstep); rm.textContent = fmt.format(shown); }
-function calc() { const h = +ch.value, v = Math.max(0, +cvv.value || 0); oh.textContent = h + ' h'; goal = h * 4.33 * v; ryy.textContent = fmt.format(goal * 12); if (!craf) craf = requestAnimationFrame(cstep); }
-ch.addEventListener('input', calc); cvv.addEventListener('input', calc); calc();
+/* montador de ideias */
+const KIND = {
+  app:  ['Um app', 'desenhar as telas e o caminho do usuário', 'programar e testar em aparelhos reais', 'publicar na Google Play'],
+  sis:  ['Um sistema', 'mapear como o trabalho acontece hoje', 'construir o sistema com acesso seguro', 'treinar quem vai usar e acompanhar'],
+  site: ['Um site', 'definir a mensagem e o visual', 'construir rápido e leve, para qualquer tela', 'colocar no ar e medir os resultados'],
+  auto: ['Uma automação', 'achar o que se repete e onde trava', 'conectar as ferramentas que você já usa', 'deixar rodando sozinho, com alertas'],
+  ia:   ['Uma solução com IA', 'entender os dados e o objetivo', 'escolher e ajustar o modelo certo', 'integrar ao seu dia a dia, com segurança'],
+  nova: ['Algo que ainda não existe', 'transformar a ideia em um protótipo', 'testar com gente de verdade', 'evoluir até a versão final']
+};
+const WHO = {eu: ['sob medida para você', 'leve e fácil de usar no dia a dia'], emp: ['para a sua empresa', 'pensado para crescer junto com o negócio'], pub: ['para muita gente', 'pronto para escalar e receber muitos usuários']};
+let k1 = 'app', k2 = 'eu';
+const bt = $('#bt'), bs = $('#bs');
+function build() {
+  const K = KIND[k1], P = WHO[k2];
+  bt.textContent = `${K[0]} ${P[0]}`;
+  bs.innerHTML = [K[1], K[2], K[3], P[1]].map(x => `<li>${x[0].toUpperCase() + x.slice(1)}</li>`).join('');
+}
+[['#pk1', v => k1 = v], ['#pk2', v => k2 = v]].forEach(([id, set]) => $(id).addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  $(id).querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === b)); set(b.dataset.v); build();
+}));
+build();
 
 /* =====================================================================
    CENA 3D — fita de dados iridescente, esferas em profundidade, espiral áurea
@@ -570,7 +611,7 @@ function scrollPos() {
 const goTo = i => scrollTo({top: tops[i], behavior: reduce ? 'auto' : 'smooth'});
 const IDX = {'#topo': 0, '#sob': 1, '#conta': 3, '#feito': 4, '#contato': N - 1};
 $$('a[href^="#"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); goTo(IDX[a.getAttribute('href')] || 0); }));
-$('#cc').addEventListener('click', () => { $('#idea').value = `Hoje perco cerca de ${ch.value}h por semana em tarefas repetitivas (≈ ${fmt.format(goal)} por mês). Quero automatizar isso.`; goTo(N - 1); });
+$('#cc').addEventListener('click', () => { $('#idea').value = `Quero criar: ${bt.textContent[0].toLowerCase() + bt.textContent.slice(1)}. Minha ideia é `; goTo(N - 1); setTimeout(() => { const t = $('#idea'); t.focus({preventScroll: true}); t.setSelectionRange(t.value.length, t.value.length); }, 900); });
 
 /* espiral áurea como indicador de progresso */
 const spi = $('#spi'), pBg = spi.querySelector('.bg'), pFg = spi.querySelector('.fg'), pDot = spi.querySelector('circle');
