@@ -36,15 +36,22 @@ em{font-style:normal}
 em .w{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 
 /* abertura */
-#boot{position:fixed;inset:0;z-index:20;background:var(--bg);display:grid;place-items:center;transition:opacity 1s .2s,visibility 0s 1.2s}
+#boot{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 42%,#17150f 0,#0b0b0c 42%,#05060d 80%);transition:opacity 1.1s cubic-bezier(.5,0,.2,1),visibility 0s 1.2s}
 #boot.off{opacity:0;visibility:hidden;pointer-events:none}
-#boot{background:radial-gradient(circle at 50% 46%,#141416 0,#0b0b0d 38%,var(--bg) 75%)}
-#boot>div{display:grid;justify-items:center}
-#boot img{width:min(62vw,340px);height:auto;border-radius:6px;-webkit-mask-image:radial-gradient(farthest-side,#000 78%,transparent);mask-image:radial-gradient(farthest-side,#000 78%,transparent);animation:bin 1.6s cubic-bezier(.2,.7,.2,1) both;filter:drop-shadow(0 0 34px rgba(217,169,74,.25))}
-#boot.off img{transform:scale(1.25);transition:transform 1.2s cubic-bezier(.5,0,.2,1)}
-@keyframes bin{from{opacity:0;transform:scale(.92);filter:blur(8px)}to{opacity:1;transform:none;filter:drop-shadow(0 0 34px rgba(217,169,74,.25))}}
-#boot i{display:block;width:89px;height:1px;margin:var(--f3) auto 0;background:rgba(217,169,74,.2);overflow:hidden;position:relative}
-#boot i::after{content:"";position:absolute;inset:0;background:var(--gold);animation:ld 1.4s ease-in-out infinite}
+#bootgl{position:absolute;inset:0;width:100%;height:100%;transition:transform 1.2s cubic-bezier(.5,0,.2,1),filter 1.2s}
+#boot.off #bootgl{transform:scale(1.6);filter:blur(6px)}
+.bw{position:absolute;left:0;right:0;top:69%;display:grid;justify-items:center;gap:12px;pointer-events:none;transition:transform 1.2s cubic-bezier(.5,0,.2,1)}
+.narrow .bw{top:61%}
+#boot.off .bw{transform:translateY(40px)}
+.bw b{display:flex;font:400 clamp(1.6rem,4.6vw,3rem)/1 var(--brand);letter-spacing:.24em;margin-right:-.24em}
+.bw b span{background:linear-gradient(100deg,#8a6526 0%,#e6bf68 30%,#fff3c8 46%,#d9a94a 58%,#9c7127 80%,#e8c26a 100%);background-size:300% 100%;background-position:100% 0;-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;transform:translateY(14px);filter:blur(6px);transition:opacity .7s,transform .7s cubic-bezier(.2,.7,.2,1),filter .7s,background-position 1.6s ease}
+.bw.on b span{opacity:1;transform:none;filter:none;background-position:0 0}
+.bw small{display:flex;align-items:center;gap:12px;font:400 clamp(.75rem,1.4vw,1rem) var(--brand);letter-spacing:.3em;color:#c9a35e;opacity:0;transition:opacity 1s .9s}
+.bw small::before,.bw small::after{content:"";width:34px;height:1px;background:linear-gradient(90deg,transparent,#c9a35e)}
+.bw small::after{transform:scaleX(-1)}
+.bw.on small{opacity:1}
+#bskip{position:absolute;right:var(--f4);bottom:calc(var(--f4) + env(safe-area-inset-bottom));background:none;border:0;color:#8a7650;font:400 .75rem var(--sans);letter-spacing:.2em;text-transform:uppercase;cursor:pointer;padding:8px}
+#bskip:hover{color:#e8c26a}
 @keyframes ld{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 
 /* topo */
@@ -205,14 +212,14 @@ small{color:var(--mute);font-size:.8125rem}
 .narrow .label{margin-bottom:var(--f3)}
 
 .nogl body{background:radial-gradient(circle at 70% 30%,#1a1640,var(--bg) 60%) fixed}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.js .rv{transition-duration:.01s;filter:none}.side.rgt s,#boot i::after,#boot img{animation:none}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.js .rv{transition-duration:.01s;filter:none}.side.rgt s,#boot i::after{animation:none}}
 :focus-visible{outline:2px solid var(--c1);outline-offset:3px;border-radius:4px}
 </style>
 </head>
 <body>
 <canvas id="gl" aria-hidden="true"></canvas>
 <div id="vig"></div>
-<div id="boot"><div><img src="marca.jpg" alt="Murinoi (BR)" width="480" height="472"><i></i></div></div>
+<div id="boot" role="img" aria-label="Murinoi (BR)"><canvas id="bootgl"></canvas><div class="bw" id="bw"><b id="bwt">MURINOI</b><small>(BR)</small></div><button id="bskip" type="button">Pular</button></div>
 
 <header class="top">
   <a class="logo" href="#topo" aria-label="Murinoi — início"><svg viewBox="0 0 100 66" class="lm" aria-hidden="true"><defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe6a2"/><stop offset=".35" stop-color="#d9a94a"/><stop offset=".6" stop-color="#9c7127"/><stop offset=".8" stop-color="#e8c26a"/><stop offset="1" stop-color="#b8862f"/></linearGradient></defs><g fill="url(#hg)"><path d="M14 6 L22 6 L49 43 L45 49 L21 16 L21 55 L14 55 Z"/><path d="M67 14 L75 3 L75 47 L66 57 L58 57 L67 48 Z"/><path d="M12 64 Q50 46 90 64 Q50 51.5 12 64 Z"/></g><g fill="none" stroke="url(#hg)" stroke-width="1.1"><path d="M46 57 L61 36"/><circle cx="62.2" cy="34.4" r="1.6"/><path d="M75 24 L79 24 L79 18"/><circle cx="79" cy="16.4" r="1.4"/><path d="M75 34 L81 34"/><circle cx="82.6" cy="34" r="1.4"/><path d="M74 44 L78 44 L82 40 L86 40"/><circle cx="87.6" cy="40" r="1.4"/><path d="M70 54 L76 54 L81 49 L85 49"/><circle cx="86.6" cy="49" r="1.4"/></g></svg><span><b>MURINOI</b><small>(BR)</small></span></a>
@@ -310,6 +317,115 @@ small{color:var(--mute);font-size:.8125rem}
 <svg class="spi" id="spi" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="sg" x1="0" x2="1"><stop offset="0" stop-color="#5ef2ff"/><stop offset=".55" stop-color="#8b7bff"/><stop offset="1" stop-color="#ff6fc8"/></linearGradient></defs><path class="bg"/><path class="fg"/><circle r="2.8"/></svg>
 
 <script src="three.custom.js"></script>
+<script>
+/* ===== Abertura: a logomarca se monta peça por peça, em ouro 3D ===== */
+window.__boot = (() => {
+  const T = window.THREE, cv = document.getElementById('bootgl'), bw = document.getElementById('bw');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  const bt = document.getElementById('bwt'); bt.innerHTML = [...bt.textContent].map((c, k) => `<span style="transition-delay:${k * 90}ms,${k * 90}ms,${k * 90}ms,${400 + k * 60}ms">${c}</span>`).join('');
+  const DUR = 3.6; // duração da montagem (s)
+  const st = {t: 0, done: false, stop: false};
+  if (!T) { bw.classList.add('on'); st.done = true; return st; }
+  let R;
+  try { R = new T.WebGLRenderer({canvas: cv, antialias: true, alpha: true, powerPreference: 'high-performance'}); } catch (e) { bw.classList.add('on'); st.done = true; return st; }
+  R.setPixelRatio(Math.min(devicePixelRatio || 1, coarse ? 1.75 : 2));
+  R.toneMapping = T.ACESFilmicToneMapping; R.toneMappingExposure = 1.1; R.outputColorSpace = T.SRGBColorSpace;
+  const scene = new T.Scene(), cam = new T.PerspectiveCamera(30, 1, .1, 100);
+
+  /* estúdio: softboxes que geram os reflexos do ouro */
+  { const pm = new T.PMREMGenerator(R), env = new T.Scene(); env.background = new T.Color(0x050505);
+    const box = (w, h, pos, k, col) => { const m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({color: new T.Color(col).multiplyScalar(k), side: T.DoubleSide})); m.position.set(...pos); m.lookAt(0, 0, 0); env.add(m); };
+    box(14, 4, [0, 9, 6], 7, 0xfff4e0); box(3, 12, [-10, 0, 5], 5, 0xffe3b0); box(3, 12, [10, 1, 4], 4, 0xffffff);
+    box(12, 2.5, [0, -8, 5], 2.2, 0xffd9a0); box(8, 8, [0, 0, -12], .6, 0xffcf8a);
+    box(18, 1.8, [0, 5.5, 12], 3.6, 0xfff1d6); box(18, 1, [0, -4.5, 12], 1.3, 0xffe2b0); box(2.2, 9, [-6.5, 0, 11], 2.6, 0xffffff); box(1.6, 9, [6.5, .5, 11], 1.8, 0xffe8c0);
+    scene.environment = pm.fromScene(env, .02).texture; pm.dispose(); }
+  const key = new T.DirectionalLight(0xfff0d8, 2.2); key.position.set(2, 4, 10); scene.add(key);
+  const sweep = new T.PointLight(0xfff2cc, 0, 0, 2); scene.add(sweep);
+  const flash = new T.PointLight(0xffd27a, 0, 0, 2); scene.add(flash);
+
+  const gold = new T.MeshStandardMaterial({color: 0xe3b05a, metalness: 1, roughness: .22, envMapIntensity: 1.3});
+  const goldD = new T.MeshStandardMaterial({color: 0xd09c44, metalness: 1, roughness: .26, envMapIntensity: 1.2});
+  const glow = new T.MeshBasicMaterial({color: new T.Color(1.6, 1.15, .5), toneMapped: false});
+
+  /* coordenadas da marca (mesmo desenho do vetor, 100×66) */
+  const S = .05, P = (x, y) => new T.Vector2((x - 50) * S, (33 - y) * S);
+  const shape = pts => { const sh = new T.Shape(); pts.forEach((q, k) => { const v = P(q[0], q[1]); k ? sh.lineTo(v.x, v.y) : sh.moveTo(v.x, v.y); }); sh.closePath(); return sh; };
+  const ext = (sh, d, b) => { const g = new T.ExtrudeGeometry(sh, {depth: d, bevelEnabled: true, bevelThickness: b, bevelSize: b * .8, bevelSegments: 3, curveSegments: 24}); g.translate(0, 0, -d / 2); return g; };
+  const arcPts = []; for (let k = 0; k <= 40; k++) { const t = k / 40, x = (1 - t) * (1 - t) * 12 + 2 * (1 - t) * t * 50 + t * t * 90, y = (1 - t) * (1 - t) * 64 + 2 * (1 - t) * t * 46 + t * t * 64; arcPts.push([x, y]); }
+  for (let k = 40; k >= 0; k--) { const t = k / 40, x = (1 - t) * (1 - t) * 12 + 2 * (1 - t) * t * 50 + t * t * 90, y = (1 - t) * (1 - t) * 64 + 2 * (1 - t) * t * 51.5 + t * t * 64; arcPts.push([x, y]); }
+
+  const logo = new T.Group(); scene.add(logo);
+  const pieces = [];
+  const add = (mesh, from, rot, t0, dur) => { const g = new T.Group(); g.add(mesh); logo.add(g); pieces.push({g, from: new T.Vector3(...from), rot: new T.Euler(...rot), t0, dur, snapped: false}); return g; };
+  /* 1) haste e diagonal  2) barra direita  3) arco  4) pino */
+  add(new T.Mesh(ext(shape([[14,6],[22,6],[49,43],[45,49],[21,16],[21,55],[14,55]]), .26, .05), gold), [-6, 3.5, 4], [1.2, -2.4, .8], .15, 1.1);
+  add(new T.Mesh(ext(shape([[67,14],[75,3],[75,47],[66,57],[58,57],[67,48]]), .26, .05), gold), [6.5, 4, 3], [-.9, 2.6, -1.1], .45, 1.05);
+  add(new T.Mesh(ext(shape(arcPts), .14, .03), goldD), [0, -5, 6], [2.2, 0, .6], .8, 1.1);
+  { const g = new T.Group(), a = P(46, 57), b = P(61, 36), len = a.distanceTo(b), bar = new T.Mesh(new T.BoxGeometry(len, .07, .08), gold);
+    bar.position.set((a.x + b.x) / 2, (a.y + b.y) / 2, 0); bar.rotation.z = Math.atan2(b.y - a.y, b.x - a.x);
+    const ring = new T.Mesh(new T.TorusGeometry(.11, .028, 12, 32), gold); const c = P(62.2, 34.4); ring.position.set(c.x, c.y, 0);
+    g.add(bar, ring); add(g, [-3, -4.5, 5], [0, 1.6, 2.4], 1.05, .9); }
+
+  /* circuitos: trilhas que crescem e pontos que acendem */
+  const traces = [];
+  [[[75,24],[79,24],[79,18]], [[75,34],[81,34]], [[74,44],[78,44],[82,40],[86,40]], [[70,54],[76,54],[81,49],[85,49]]].forEach((pl, k) => {
+    const segs = [];
+    for (let q = 0; q < pl.length - 1; q++) { const a = P(...pl[q]), b = P(...pl[q + 1]), len = a.distanceTo(b), m = new T.Mesh(new T.BoxGeometry(1, .045, .05), goldD);
+      m.position.set(a.x, a.y, .02); m.rotation.z = Math.atan2(b.y - a.y, b.x - a.x); m.geometry.translate(.5, 0, 0); m.scale.x = .0001; logo.add(m); segs.push({m, len}); }
+    const end = P(...pl[pl.length - 1]), dir = P(...pl[pl.length - 1]).sub(P(...pl[pl.length - 2])).normalize();
+    const dot = new T.Mesh(new T.TorusGeometry(.085, .024, 10, 24), gold); dot.position.set(end.x + dir.x * .1, end.y + dir.y * .1, .02); dot.scale.setScalar(.0001); logo.add(dot);
+    const core = new T.Mesh(new T.SphereGeometry(.05, 16, 12), glow); core.position.copy(dot.position); core.scale.setScalar(.0001); logo.add(core);
+    traces.push({segs, dot, core, t0: 1.75 + k * .14});
+  });
+
+  const ease = x => 1 - Math.pow(1 - x, 4);
+  const back = x => { const c = 1.4; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const qA = new T.Quaternion(), qB = new T.Quaternion();
+  let W = 1, H = 1;
+  function resize() { W = innerWidth; H = innerHeight; R.setSize(W, H, false); cam.aspect = W / H; cam.updateProjectionMatrix(); }
+  resize(); addEventListener('resize', resize);
+
+  let last = performance.now();
+  function frame(now) {
+    if (st.stop) return;
+    const dt = Math.min(.1, (now - last) / 1000); last = now;
+    st.t += reduce ? 10 : dt; const t = st.t;
+    /* câmera: aproxima devagar, e fica sempre de frente */
+    const fit = W / H < 1 ? 1.4 / (W / H) * .62 : 1;
+    cam.position.set(Math.sin(t * .4) * .25, .35 + Math.cos(t * .33) * .08, (12.4 - Math.min(t, DUR) * .25) * Math.max(1, fit));
+    cam.lookAt(0, .25, 0);
+    logo.rotation.y = Math.sin(t * .5) * .12 * clamp((t - DUR + .4) / .8) + (1 - ease(clamp(t / 2))) * -.35;
+    logo.position.y = .95;
+    /* peças voando até o lugar */
+    pieces.forEach(p => {
+      const k = clamp((t - p.t0) / p.dur), e = back(k);
+      p.g.position.copy(p.from).multiplyScalar(1 - e);
+      qA.setFromEuler(p.rot); qB.identity(); p.g.quaternion.copy(qA).slerp(qB, ease(k));
+      p.g.visible = t > p.t0 - .05;
+      if (k >= 1 && !p.snapped) { p.snapped = true; flash.position.set(0, .5, 2); flash.intensity = 14; }
+    });
+    flash.intensity *= Math.pow(.02, dt);
+    /* circuitos */
+    traces.forEach(tr => {
+      let tt = (t - tr.t0) / .45;
+      tr.segs.forEach(sg => { const k = clamp(tt * tr.segs.length); sg.m.scale.x = Math.max(.0001, ease(k) * sg.len); tt -= 1 / tr.segs.length; });
+      const kd = clamp((t - tr.t0 - .45) / .25); tr.dot.scale.setScalar(Math.max(.0001, back(kd))); tr.core.scale.setScalar(Math.max(.0001, kd * (1 + .25 * Math.sin(t * 6 + tr.t0 * 9))));
+    });
+    /* reflexo de luz atravessando o metal */
+    const sw = clamp((t - 2.35) / 1.1); sweep.position.set(-6 + sw * 12, 1.5, 3.2); sweep.intensity = Math.sin(sw * Math.PI) * 60;
+    if (t > 2.2 && !bw.classList.contains('on')) bw.classList.add('on');
+    if (t >= DUR) st.done = true;
+    R.render(scene, cam);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  st.dispose = () => { st.stop = true; setTimeout(() => { R.dispose(); R.forceContextLoss && R.forceContextLoss(); }, 1300); };
+  return st;
+})();
+</script>
+
 <script>
 /* ===== Configuração ===== */
 const EMAIL = 'contato@murinoi.com';
@@ -647,8 +763,9 @@ let sS = 0, last = performance.now(), time = 0, frames = 0, booted = false, ema 
 const GOV = !/[?&]hq/.test(location.search);
 resize(); addEventListener('resize', resize); addEventListener('load', resize);
 const boot = $('#boot');
-function hideBoot() { if (booted) return; booted = true; boot.classList.add('off'); }
-setTimeout(hideBoot, 4500);
+function hideBoot() { if (booted) return; booted = true; boot.classList.add('off'); window.__boot.dispose && window.__boot.dispose(); }
+$('#bskip').addEventListener('click', hideBoot);
+setTimeout(hideBoot, 9000); /* rede de segurança */
 
 function frame(now) {
   const raw = Math.min(.5, (now - last) / 1000), dt = Math.min(.05, raw); last = now; time += dt;
@@ -670,11 +787,14 @@ function frame(now) {
   const a = Math.round(sE); if (a !== act) { act = a; setCap(a); }
   pFg.style.strokeDashoffset = spLen * (1 - sE / (N - 1));
   const pt = pFg.getPointAtLength(spLen * clamp(sE / (N - 1))); pDot.setAttribute('cx', pt.x); pDot.setAttribute('cy', pt.y);
+  const B = window.__boot;
+  if (!booted && B.done && frames > 2) setTimeout(hideBoot, 450);
   if (R) {
-    R.render({sE, f, i, time, d, narrow, aspect, px: ppx, py: ppy});
-    if (++frames === 3) setTimeout(hideBoot, Math.max(0, 1500 - performance.now()));
+    /* durante a abertura, a cena principal só aquece (economiza bateria) e volta a rodar perto do fim */
+    if (booted || frames < 3 || B.t > 3) R.render({sE, f, i, time, d, narrow, aspect, px: ppx, py: ppy});
+    frames++;
     ema = ema * .95 + raw * 1000 * .05;
-    if (GOV && frames > 60 && ema > 24 && lvl < 4) { if (++slow > 40) { slow = 0; ema = 16; R.lowerQuality(++lvl); } } else slow = 0;
+    if (GOV && booted && frames > 60 && ema > 24 && lvl < 4) { if (++slow > 40) { slow = 0; ema = 16; R.lowerQuality(++lvl); } } else slow = 0;
   } else hideBoot();
   requestAnimationFrame(frame);
 }
