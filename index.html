@@ -84,7 +84,19 @@ em .w{background:var(--grad);-webkit-background-clip:text;background-clip:text;c
 .top{background:linear-gradient(to bottom,rgba(247,243,238,.92),rgba(247,243,238,.6) 70%,transparent)}
 .nav .cta{color:#faf6f1;padding:10px 22px;border-radius:999px;background:var(--fg);transition:background .3s}
 .nav .cta:hover{background:#4a4452;color:#fff}
-@media (max-width:900px){.nav a:not(.cta){display:none}}
+.links{display:flex;align-items:center;gap:var(--f4);white-space:nowrap}
+.nav .cta{white-space:nowrap}
+.mbtn{display:none;width:42px;height:38px;border:1px solid rgba(46,43,51,.2);border-radius:999px;background:rgba(255,255,255,.7);cursor:pointer;flex-direction:column;justify-content:center;align-items:center;gap:4px;padding:0}
+.mbtn i{display:block;width:16px;height:1.5px;background:var(--fg);transition:transform .3s,opacity .3s}
+.nav.open .mbtn i:nth-child(1){transform:translateY(5.5px) rotate(45deg)}.nav.open .mbtn i:nth-child(2){opacity:0}.nav.open .mbtn i:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+@media (max-width:1240px){
+  .nav{gap:10px;position:relative}
+  .mbtn{display:flex}
+  .links{display:none;position:absolute;top:calc(100% + 12px);right:0;flex-direction:column;align-items:stretch;gap:0;min-width:220px;padding:8px;background:#fffdfa;border:1px solid rgba(70,58,82,.1);border-radius:16px;box-shadow:0 24px 60px -20px rgba(70,50,90,.35)}
+  .nav.open .links{display:flex}
+  .links a{padding:13px 14px;border-radius:10px;font-size:.6875rem;color:var(--fg)}
+  .links a:hover{background:#f4eef1}
+}
 
 /* rótulos verticais nas laterais */
 .side{position:fixed;top:50%;z-index:5;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:var(--f3);font:400 .625rem var(--tech);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);pointer-events:none}
@@ -104,7 +116,7 @@ main{position:relative;z-index:2}
 .sec.r{justify-content:flex-end}
 .sec::before{content:none}
 
-.blk{width:clamp(22rem,38.2vw,36rem);max-height:calc(100svh - 200px);overflow:auto;scrollbar-width:none;margin:auto 0;background:var(--card);border:1px solid rgba(255,255,255,.95);border-radius:24px;padding:clamp(24px,2.6vw,40px) clamp(26px,3vw,44px);box-shadow:0 40px 90px -40px rgba(70,50,90,.28),0 2px 6px rgba(70,50,90,.04)}
+.blk{width:clamp(22rem,38.2vw,36rem);margin:auto 0;background:var(--card);border:1px solid rgba(255,255,255,.95);border-radius:24px;padding:clamp(24px,2.6vw,40px) clamp(26px,3vw,44px);box-shadow:0 40px 90px -40px rgba(70,50,90,.28),0 2px 6px rgba(70,50,90,.04)}
 #contato h2,#conta h2{font-size:clamp(2rem,3.2vw,2.8rem)}
 #contato .wa,#contato .or{margin-top:var(--f3)}
 #conta .res strong{font-size:1.6rem}
@@ -318,6 +330,61 @@ small{color:var(--mute);font-size:.8125rem}
 .narrow .blk{margin:0}
 @media (prefers-reduced-motion:reduce){.viz *{animation:none!important}}
 
+.blk{flex-shrink:0}
+.short .top{padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:8px}
+.short .side,.short .cap{display:none}
+.flow .side,.flow .cap{display:none}
+.flow .top{background:rgba(247,243,238,.94);box-shadow:0 1px 0 rgba(70,58,82,.08)}
+.js.flow .sec{position:relative;inset:auto;opacity:1;visibility:visible;pointer-events:auto;transform:none!important;overflow:visible;min-height:0;align-items:center;padding:28px max(16px,env(safe-area-inset-right)) 28px max(16px,env(safe-area-inset-left))}
+.js.flow .sec:first-of-type{padding-top:calc(var(--toph,96px) + 18px + env(safe-area-inset-top))}
+.js.flow .sec:last-of-type{padding-bottom:calc(48px + env(safe-area-inset-bottom))}
+.flow:not(.narrow) .sec{padding-left:clamp(20px,5vw,64px);padding-right:clamp(20px,5vw,64px)}
+.flow .blk{max-height:none;overflow:visible;margin:0}
+.flow:not(.narrow) .blk{width:min(46%,34rem)}
+.flow:not(.narrow) #feito .blk{width:min(60%,44rem)}
+.flow:not(.narrow) .viz{height:min(78vh,420px)}
+.flow.narrow .sec{flex-direction:column}
+.flow.narrow .sec .viz,.flow.narrow .sec.r .viz{flex:none;height:min(80vw,360px);max-height:none;margin:0 0 14px}
+.flow #track{display:none}
+.flow .spi{display:none}
+.js:not(.flow) .sec{overflow:hidden}
+.narrow #feito .blk,.narrow .blk{width:100%;min-width:0}
+/* títulos acompanham também a altura da tela */
+h1{font-size:clamp(2.4rem,min(5.6vw,8.2vh),5rem)}
+h2{font-size:clamp(1.9rem,min(4.4vw,6.6vh),3.8rem)}
+#contato h2,#conta h2{font-size:clamp(1.8rem,min(3.2vw,5.6vh),2.8rem)}
+/* telas largas: montador e contato em duas colunas, para caber sem rolar */
+@media (min-aspect-ratio:1/1) and (min-width:900px){
+  #conta .blk,#contato .blk{width:min(56vw,780px)}
+  #conta .calc{grid-template-columns:1fr 1fr;column-gap:var(--f4);align-items:start}
+  #conta .pick{grid-column:1}
+  #conta .res{grid-column:2;grid-row:1 / span 2;border-top:0;border-left:1px solid var(--line);padding:0 0 0 var(--f4)}
+  #conta .calc>#cc{grid-column:1 / -1;justify-self:start}
+  #contato .blk{display:grid;grid-template-columns:1fr 1fr;column-gap:var(--f5);align-content:start}
+  #contato .blk>*{grid-column:1}
+  #contato .blk>form{grid-column:2;grid-row:1 / span 5;margin-top:0;align-self:center}
+  #contato .or{display:none}
+  #contato .blk>.foot{grid-column:1 / -1}
+}
+/* telas baixas: respiros menores */
+@media (max-height:780px) and (min-aspect-ratio:1/1){
+  .sec{padding-top:96px;padding-bottom:56px}
+  .blk{padding:22px 30px}
+  .label{margin-bottom:var(--f2)}
+  .sec p{margin-top:var(--f2)}
+  .row{margin-top:var(--f3)}
+  .li{padding:8px 0}
+  .list{margin-top:var(--f2)}
+  .calc{padding:var(--f3)!important;gap:var(--f2)!important;margin-top:var(--f2)!important}
+  .steps{gap:2px}
+  .foot{margin-top:var(--f3)}
+  form{gap:var(--f2)}
+}
+.mcta{display:none}
+@media (max-width:420px){.links .mcta{display:block;margin-top:4px;background:var(--fg);color:#faf6f1!important;text-align:center}}
+@media (max-width:420px){.nav .cta{display:none}.logo b{font-size:.875rem!important}}
+.narrow .label{white-space:normal;flex-wrap:wrap;row-gap:6px}
+@media (max-width:420px){.label::after,.label::before{display:none}}
 .nogl body{background:radial-gradient(circle at 70% 30%,#e7dde8,var(--bg) 60%) fixed}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.js .rv{transition-duration:.01s;filter:none}.side.rgt s,#boot i::after{animation:none}}
 :focus-visible{outline:2px solid var(--c1);outline-offset:3px;border-radius:4px}
@@ -330,7 +397,7 @@ small{color:var(--mute);font-size:.8125rem}
 
 <header class="top">
   <a class="logo" href="#topo" aria-label="Murinoi — início"><svg viewBox="0 0 100 66" class="lm" aria-hidden="true"><defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9b3a3"/><stop offset=".35" stop-color="#b58372"/><stop offset=".6" stop-color="#8a5f53"/><stop offset=".8" stop-color="#caa08f"/><stop offset="1" stop-color="#9e7264"/></linearGradient></defs><g fill="url(#hg)"><path d="M14 6 L22 6 L49 43 L45 49 L21 16 L21 55 L14 55 Z"/><path d="M67 14 L75 3 L75 47 L66 57 L58 57 L67 48 Z"/><path d="M12 64 Q50 46 90 64 Q50 51.5 12 64 Z"/></g><g fill="none" stroke="url(#hg)" stroke-width="1.1"><path d="M46 57 L61 36"/><circle cx="62.2" cy="34.4" r="1.6"/><path d="M75 24 L79 24 L79 18"/><circle cx="79" cy="16.4" r="1.4"/><path d="M75 34 L81 34"/><circle cx="82.6" cy="34" r="1.4"/><path d="M74 44 L78 44 L82 40 L86 40"/><circle cx="87.6" cy="40" r="1.4"/><path d="M70 54 L76 54 L81 49 L85 49"/><circle cx="86.6" cy="49" r="1.4"/></g></svg><span><b>MURINOI</b><small>(BR)</small></span></a>
-  <nav class="nav" aria-label="Principal"><a href="#topo">Início</a><a href="#conta">Monte sua ideia</a><a href="#feito">O que fazemos</a><a class="cta" href="#contato">Contar <span class="hm">minha </span>ideia</a></nav>
+  <nav class="nav" aria-label="Principal"><span class="links" id="links"><a href="#topo">Início</a><a href="#sob">Toda ideia</a><a href="#conta">Monte sua ideia</a><a href="#feito">O que fazemos</a><a class="mcta" href="#contato">Contar minha ideia</a></span><button class="mbtn" id="mbtn" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="links"><i></i><i></i><i></i></button><a class="cta" href="#contato">Contar <span class="hm">minha </span>ideia</a></nav>
 </header>
 <div class="side lft" aria-hidden="true"><span>Apps</span><s></s><span>Inteligência artificial</span><s></s><span>Sistemas</span></div>
 <div class="side rgt" aria-hidden="true"><span>Role</span><s></s></div>
@@ -870,20 +937,50 @@ if (!R) root.classList.add('nogl');
 /* ---------- rolagem ---------- */
 const track = $('#track'); track.style.setProperty('--n', N);
 const stops = secs.map((_, i) => { const d = document.createElement('div'); d.className = 'stop'; d.style.top = `calc(${i} * var(--sh))`; track.appendChild(d); return d; });
-let tops = [], aspect = 1, narrow = false;
+let tops = [], aspect = 1, narrow = false, flow = false, lockIdx = -1, lastW = 0;
+/* o conteúdo de alguma seção não cabe na tela? então usa rolagem normal (todas as informações acessíveis) */
+function needFlow() {
+  if (innerHeight < 500) return true;
+  return secs.some(sec => {
+    const blk = sec.querySelector('.blk'), cs = getComputedStyle(sec);
+    const avail = sec.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    return blk.scrollHeight > avail + 4;
+  });
+}
 function resize() {
   const w = cv.clientWidth, h = cv.clientHeight; aspect = w / h; narrow = aspect < 1;
   root.classList.toggle('narrow', narrow);
+  root.classList.toggle('short', h < 560);
   if (R) R.resize(w, h);
-  tops = stops.map(s => s.offsetTop);
+  root.style.setProperty('--toph', document.querySelector('.top').offsetHeight + 'px');
+  /* no celular a barra de endereço muda a altura ao rolar: só reavalia o modo quando a largura muda */
+  if (w !== lastW || !flow) {
+    lastW = w; root.classList.remove('flow');
+    secs.forEach(el => { el.style.opacity = ''; el.style.transform = ''; });
+    flow = needFlow(); root.classList.toggle('flow', flow);
+  }
+  tops = flow ? secs.map(el => Math.max(0, el.offsetTop + el.offsetHeight / 2 - innerHeight / 2)) : stops.map(s => s.offsetTop);
+  if (flow) tops[0] = 0;
 }
 function scrollPos() {
+  if (lockIdx >= 0) return lockIdx;
   const y = scrollY + 1; let i = 0; while (i < N - 1 && y >= tops[i + 1]) i++;
-  if (i >= N - 1) return N - 1; return i + clamp((y - tops[i]) / (tops[i + 1] - tops[i]));
+  if (i >= N - 1) return N - 1; return i + clamp((y - tops[i]) / Math.max(1, tops[i + 1] - tops[i]));
 }
-const goTo = i => scrollTo({top: tops[i], behavior: reduce ? 'auto' : 'smooth'});
+const goTo = i => {
+  const y = flow ? (i === 0 ? 0 : secs[i].offsetTop - (document.querySelector('.top').offsetHeight - 8)) : tops[i];
+  scrollTo({top: y, behavior: reduce ? 'auto' : 'smooth'});
+};
+/* menu compacto */
+const navEl = document.querySelector('.nav'), mbtn = $('#mbtn');
+mbtn.addEventListener('click', () => { const o = navEl.classList.toggle('open'); mbtn.setAttribute('aria-expanded', o); mbtn.setAttribute('aria-label', o ? 'Fechar menu' : 'Abrir menu'); });
+document.addEventListener('click', e => { if (!navEl.contains(e.target)) { navEl.classList.remove('open'); mbtn.setAttribute('aria-expanded', false); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') navEl.classList.remove('open'); });
+/* ao digitar (teclado do celular abre e a página mexe), a seção fica parada */
+document.addEventListener('focusin', e => { const s = e.target.closest && e.target.closest('.sec'); if (s && !flow && e.target.matches('input,textarea')) lockIdx = secs.indexOf(s); });
+document.addEventListener('focusout', () => { if (lockIdx < 0) return; const k = lockIdx; setTimeout(() => { if (document.activeElement && document.activeElement.matches('input,textarea')) return; lockIdx = -1; scrollTo({top: tops[k], behavior: 'auto'}); }, 350); });
 const IDX = {'#topo': 0, '#sob': 1, '#conta': 3, '#feito': 4, '#contato': N - 1};
-$$('a[href^="#"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); goTo(IDX[a.getAttribute('href')] || 0); }));
+$$('a[href^="#"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); navEl.classList.remove('open'); goTo(IDX[a.getAttribute('href')] || 0); }));
 $('#cc').addEventListener('click', () => { $('#idea').value = `Quero criar: ${bt.textContent[0].toLowerCase() + bt.textContent.slice(1)}. Minha ideia é `; goTo(N - 1); setTimeout(() => { const t = $('#idea'); t.focus({preventScroll: true}); t.setSelectionRange(t.value.length, t.value.length); }, 900); });
 
 /* espiral áurea como indicador de progresso */
@@ -903,6 +1000,8 @@ addEventListener('pointermove', e => { tpx = e.clientX / innerWidth * 2 - 1; tpy
 let sS = 0, last = performance.now(), time = 0, frames = 0, booted = false, ema = 16, lvl = 0, slow = 0, act = -1;
 const GOV = !/[?&]hq/.test(location.search);
 resize(); addEventListener('resize', resize); addEventListener('load', resize);
+if (document.fonts) document.fonts.ready.then(() => { lastW = 0; resize(); });
+addEventListener('orientationchange', () => setTimeout(() => { lastW = 0; resize(); }, 300));
 const boot = $('#boot');
 function hideBoot() {
   if (booted) return; booted = true;
@@ -928,6 +1027,11 @@ function frame(now) {
   ppx += (tpx - ppx) * .05; ppy += (tpy - ppy) * .05;
   secs.forEach((el, k) => {
     const dd = sE - k, ad = Math.abs(dd), vis = ad < .7, on = ad < .5;
+    if (flow) {
+      const r = el.getBoundingClientRect(), seen = r.top < innerHeight * .9 && r.bottom > innerHeight * .1;
+      if (seen !== el._o) { el._o = seen; el.classList.toggle('on', seen); el.querySelectorAll('.viz svg').forEach(v => v.pauseAnimations && (seen ? v.unpauseAnimations() : v.pauseAnimations())); }
+      return;
+    }
     if (vis !== el._v) { el._v = vis; el.classList.toggle('vis', vis); }
     if (on !== el._o) { el._o = on; el.classList.toggle('on', on); el.querySelectorAll('.viz svg').forEach(v => v.pauseAnimations && (on ? v.unpauseAnimations() : v.pauseAnimations())); }
     if (vis) {
