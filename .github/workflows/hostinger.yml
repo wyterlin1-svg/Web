@@ -1,0 +1,21 @@
+# Mantém o ramo "hostinger" igual à pasta site/ do main.
+# A Hostinger puxa esse ramo e coloca os arquivos direto na public_html.
+name: Atualizar ramo da Hostinger
+on:
+  push:
+    branches: [main]
+    paths: ['site/**']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Separar a pasta site/ e enviar para o ramo hostinger
+        run: |
+          git subtree split --prefix site -b hostinger
+          git push --force origin hostinger
