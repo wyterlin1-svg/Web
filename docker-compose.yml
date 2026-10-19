@@ -1,26 +1,28 @@
-# Site Murinoi — sobe com um comando (ou pela URL deste arquivo no Docker Manager da Hostinger).
-# - Baixa o site do GitHub (ramo "hostinger") ao iniciar e confere novidades a cada 10 minutos.
-# - Caddy serve o site e emite o certificado HTTPS sozinho para o domínio.
-# Antes: aponte o DNS de murinoi.com e www.murinoi.com (registro A) para o IP da sua VPS.
+# Site Murinoi — cole a URL deste arquivo no Docker Manager da Hostinger.
+# Funciona sozinho nos dois casos:
+#  - VPS já tem Traefik (ex.: modelo do n8n) nas portas 80/443 -> o site entra atrás dele, com HTTPS.
+#  - Portas livres -> o site usa 80/443 direto e o Caddy emite o HTTPS.
+#  - Porta 80 ocupada por outro programa -> o site sobe na porta 8080 (veja o log).
+# O site é baixado do GitHub (ramo "hostinger") e se atualiza a cada 10 minutos.
+# Antes: registros A de murinoi.com e www no DNS apontando para o IP da VPS.
 services:
-  site:
-    image: caddy:2.8-alpine
-    container_name: murinoi-site
+  instalador:
+    image: docker:27-cli
+    container_name: murinoi-instalador
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
     environment:
-      DOMINIO: "murinoi.com, www.murinoi.com"
+      DOMINIOS: "murinoi.com www.murinoi.com"
       SITE_ZIP: "https://github.com/wyterlin1-svg/Web/archive/refs/heads/hostinger.zip"
     volumes:
-      - caddy_data:/data
-      - caddy_config:/config
+      - /var/run/docker.sock:/var/run/docker.sock
     command:
       - sh
       - -c
       - |
         set -u
+        NOME=murinoi-site
+        IMG=caddy:2.8-alpine
+        cat > /tmp/boot.sh <<'FIM'
         mkdir -p /srv/site
         atualizar() {
           rm -rf /tmp/novo && mkdir -p /tmp/novo
@@ -37,7 +39,7 @@ services:
         }
         atualizar
         cat > /etc/caddy/Caddyfile <<EOF
-        $$DOMINIO {
+        $$SITE_ADDR {
           root * /srv/site
           encode zstd gzip
           @estaticos path *.js *.css *.png *.jpg *.svg *.ico *.webmanifest
@@ -52,7 +54,46 @@ services:
         EOF
         ( while true; do sleep 600; atualizar; done ) &
         exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+        FIM
 
-volumes:
-  caddy_data:
-  caddy_config:
+        subir() {
+          docker rm -f $$NOME >/dev/null 2>&1 || true
+          docker pull -q $$IMG >/dev/null 2>&1 || true
+          comum="-d --name $$NOME --restart unless-stopped -e SITE_ZIP=$$SITE_ZIP"
+          T=$$(docker ps --filter publish=443 --format '{{.Names}}' | head -n1)
+          [ -z "$$T" ] && T=$$(docker ps --filter publish=80 --format '{{.Names}}' | head -n1)
+
+          if [ -z "$$T" ]; then
+            echo "portas 80/443 livres: Caddy direto com HTTPS"
+            enderecos=$$(echo $$DOMINIOS | sed 's/ /, /g')
+            docker run $$comum -p 80:80 -p 443:443 -v murinoi_caddy_data:/data \
+              -e "SITE_ADDR=$$enderecos" $$IMG sh -c "$$(cat /tmp/boot.sh)"
+          elif docker inspect -f '{{.Config.Image}} {{join .Args " "}}' "$$T" | grep -qi traefik; then
+            args=$$(docker inspect -f '{{join .Args " "}}' "$$T" | tr ' ' '\n')
+            rede=$$(docker inspect -f '{{range $$k, $$v := .NetworkSettings.Networks}}{{$$k}} {{end}}' "$$T" | awk '{print $$1}')
+            ep=$$(echo "$$args" | sed -n 's/^--entrypoints\.\([^.=]*\)\.address=:443$$/\1/p' | head -n1)
+            cr=$$(echo "$$args" | sed -n 's/^--certificatesresolvers\.\([^.=]*\)\..*/\1/p' | head -n1)
+            [ -z "$$ep" ] && ep=websecure
+            B='`'; regra=""
+            for d in $$DOMINIOS; do regra="$${regra:+$$regra || }Host($$B$$d$$B)"; done
+            echo "Traefik encontrado ($$T, rede $$rede, entrada $$ep, certificado $${cr:-padrão})"
+            set -- --label traefik.enable=true \
+              --label "traefik.docker.network=$$rede" \
+              --label "traefik.http.routers.murinoi.rule=$$regra" \
+              --label "traefik.http.routers.murinoi.entrypoints=$$ep" \
+              --label traefik.http.routers.murinoi.tls=true \
+              --label traefik.http.services.murinoi.loadbalancer.server.port=80
+            [ -n "$$cr" ] && set -- "$$@" --label "traefik.http.routers.murinoi.tls.certresolver=$$cr"
+            docker run $$comum --network "$$rede" "$$@" -e "SITE_ADDR=:80" $$IMG sh -c "$$(cat /tmp/boot.sh)"
+          else
+            echo "porta 80 ocupada por $$T (não é Traefik): site na porta 8080 -> http://IP-DA-VPS:8080"
+            docker run $$comum -p 8080:80 -e "SITE_ADDR=:80" $$IMG sh -c "$$(cat /tmp/boot.sh)"
+          fi
+        }
+
+        subir
+        # confere a cada hora se o site continua de pé
+        while true; do
+          sleep 3600
+          docker ps --filter name=^/$$NOME$$ --format '{{.Names}}' | grep -q . || subir
+        done
