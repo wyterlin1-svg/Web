@@ -1,0 +1,58 @@
+# Site Murinoi — sobe com um comando (ou pela URL deste arquivo no Docker Manager da Hostinger).
+# - Baixa o site do GitHub (ramo "hostinger") ao iniciar e confere novidades a cada 10 minutos.
+# - Caddy serve o site e emite o certificado HTTPS sozinho para o domínio.
+# Antes: aponte o DNS de murinoi.com e www.murinoi.com (registro A) para o IP da sua VPS.
+services:
+  site:
+    image: caddy:2.8-alpine
+    container_name: murinoi-site
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMINIO: "murinoi.com, www.murinoi.com"
+      SITE_ZIP: "https://github.com/wyterlin1-svg/Web/archive/refs/heads/hostinger.zip"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    command:
+      - sh
+      - -c
+      - |
+        set -u
+        mkdir -p /srv/site
+        atualizar() {
+          rm -rf /tmp/novo && mkdir -p /tmp/novo
+          if wget -qO /tmp/site.zip "$$SITE_ZIP" && unzip -qo /tmp/site.zip -d /tmp/novo; then
+            pasta=$$(ls -d /tmp/novo/*/ | head -n1)
+            if [ -f "$${pasta}index.html" ]; then
+              rm -rf /srv/site/* /srv/site/.[!.]* 2>/dev/null || true
+              cp -a "$${pasta}." /srv/site/
+              echo "site atualizado: $$(date)"
+            fi
+          else
+            echo "aviso: não consegui baixar o site agora; mantendo a versão atual"
+          fi
+        }
+        atualizar
+        cat > /etc/caddy/Caddyfile <<EOF
+        $$DOMINIO {
+          root * /srv/site
+          encode zstd gzip
+          @estaticos path *.js *.css *.png *.jpg *.svg *.ico *.webmanifest
+          header @estaticos Cache-Control "public, max-age=86400"
+          file_server
+          handle_errors {
+            @404 expression {err.status_code} == 404
+            rewrite @404 /404.html
+            file_server
+          }
+        }
+        EOF
+        ( while true; do sleep 600; atualizar; done ) &
+        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+
+volumes:
+  caddy_data:
+  caddy_config:
