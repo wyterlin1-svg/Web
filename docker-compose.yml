@@ -71,6 +71,7 @@ services:
             [ -z "$$cr" ] && cr=$$(echo "$$args" | sed -n 's/^--certificatesresolvers\.\([^.=]*\)\..*/\1/p' | head -n1)
           fi
           [ -z "$$ep" ] && ep=websecure
+          [ -z "$$cr" ] && cr=letsencrypt  # padrão da Hostinger
           B='`'; regra=""
           for d in $$DOMINIOS; do regra="$${regra:+$$regra || }Host($$B$$d$$B)"; done
           set -- --label traefik.enable=true \
