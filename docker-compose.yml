@@ -1,6 +1,6 @@
 # Site Murinoi — cole a URL deste arquivo no Docker Manager da Hostinger.
 # Funciona sozinho nos dois casos:
-#  - VPS já tem Traefik (ex.: modelo do n8n) nas portas 80/443 -> o site entra atrás dele, com HTTPS.
+#  - VPS já tem Traefik (ex.: n8n) -> o site entra atrás dele e copia a configuração de HTTPS dos outros apps.
 #  - Portas livres -> o site usa 80/443 direto e o Caddy emite o HTTPS.
 #  - Porta 80 ocupada por outro programa -> o site sobe na porta 8080 (veja o log).
 # O site é baixado do GitHub (ramo "hostinger") e se atualiza a cada 10 minutos.
@@ -60,37 +60,47 @@ services:
           docker rm -f $$NOME >/dev/null 2>&1 || true
           docker pull -q $$IMG >/dev/null 2>&1 || true
           comum="-d --name $$NOME --restart unless-stopped -e SITE_ZIP=$$SITE_ZIP"
-          T=$$(docker ps --filter publish=443 --format '{{.Names}}' | head -n1)
-          [ -z "$$T" ] && T=$$(docker ps --filter publish=80 --format '{{.Names}}' | head -n1)
-
-          if [ -z "$$T" ]; then
-            echo "portas 80/443 livres: Caddy direto com HTTPS"
-            enderecos=$$(echo $$DOMINIOS | sed 's/ /, /g')
-            docker run $$comum -p 80:80 -p 443:443 -v murinoi_caddy_data:/data \
-              -e "SITE_ADDR=$$enderecos" $$IMG sh -c "$$(cat /tmp/boot.sh)"
-          elif docker inspect -f '{{.Config.Image}} {{join .Args " "}}' "$$T" | grep -qi traefik; then
+          T=$$(docker ps --format '{{.Names}} {{.Image}}' | grep -i traefik | awk '{print $$1}' | head -n1)
+          # copia entrada e certificado de outro app que já funciona atrás do Traefik (ex.: n8n)
+          rotulos=$$(docker ps -q | xargs -r docker inspect -f '{{range $$k, $$v := .Config.Labels}}{{$$k}}={{$$v}}{{"\n"}}{{end}}' 2>/dev/null | grep -v '\.murinoi\.')
+          ep=$$(echo "$$rotulos" | sed -n 's/^traefik\.http\.routers\.[^.]*\.entrypoints=//p' | grep -vx web | head -n1)
+          cr=$$(echo "$$rotulos" | sed -n 's/^traefik\.http\.routers\.[^.]*\.tls\.certresolver=//p' | head -n1)
+          if [ -n "$$T" ]; then
             args=$$(docker inspect -f '{{join .Args " "}}' "$$T" | tr ' ' '\n')
+            [ -z "$$ep" ] && ep=$$(echo "$$args" | sed -n 's/^--entrypoints\.\([^.=]*\)\.address=:443$$/\1/p' | head -n1)
+            [ -z "$$cr" ] && cr=$$(echo "$$args" | sed -n 's/^--certificatesresolvers\.\([^.=]*\)\..*/\1/p' | head -n1)
+          fi
+          [ -z "$$ep" ] && ep=websecure
+          B='`'; regra=""
+          for d in $$DOMINIOS; do regra="$${regra:+$$regra || }Host($$B$$d$$B)"; done
+          set -- --label traefik.enable=true \
+            --label "traefik.http.routers.murinoi.rule=$$regra" \
+            --label "traefik.http.routers.murinoi.entrypoints=$$ep" \
+            --label traefik.http.routers.murinoi.tls=true \
+            --label traefik.http.services.murinoi.loadbalancer.server.port=80
+          [ -n "$$cr" ] && set -- "$$@" --label "traefik.http.routers.murinoi.tls.certresolver=$$cr"
+
+          if [ -n "$$T" ]; then
             rede=$$(docker inspect -f '{{range $$k, $$v := .NetworkSettings.Networks}}{{$$k}} {{end}}' "$$T" | awk '{print $$1}')
-            ep=$$(echo "$$args" | sed -n 's/^--entrypoints\.\([^.=]*\)\.address=:443$$/\1/p' | head -n1)
-            cr=$$(echo "$$args" | sed -n 's/^--certificatesresolvers\.\([^.=]*\)\..*/\1/p' | head -n1)
-            [ -z "$$ep" ] && ep=websecure
-            B='`'; regra=""
-            for d in $$DOMINIOS; do regra="$${regra:+$$regra || }Host($$B$$d$$B)"; done
             echo "Traefik encontrado ($$T, rede $$rede, entrada $$ep, certificado $${cr:-padrão})"
-            set -- --label traefik.enable=true \
-              --label "traefik.docker.network=$$rede" \
-              --label "traefik.http.routers.murinoi.rule=$$regra" \
-              --label "traefik.http.routers.murinoi.entrypoints=$$ep" \
-              --label traefik.http.routers.murinoi.tls=true \
-              --label traefik.http.services.murinoi.loadbalancer.server.port=80
-            [ -n "$$cr" ] && set -- "$$@" --label "traefik.http.routers.murinoi.tls.certresolver=$$cr"
-            docker run $$comum --network "$$rede" "$$@" -e "SITE_ADDR=:80" $$IMG sh -c "$$(cat /tmp/boot.sh)"
+            if [ "$$rede" = host ] || [ -z "$$rede" ]; then
+              docker run $$comum "$$@" -e "SITE_ADDR=:80" $$IMG sh -c "$$(cat /tmp/boot.sh)"
+            else
+              docker run $$comum --network "$$rede" --label "traefik.docker.network=$$rede" "$$@" \
+                -e "SITE_ADDR=:80" $$IMG sh -c "$$(cat /tmp/boot.sh)"
+            fi
           else
-            echo "porta 80 ocupada por $$T (não é Traefik): site na porta 8080 -> http://IP-DA-VPS:8080"
-            docker run $$comum -p 8080:80 -e "SITE_ADDR=:80" $$IMG sh -c "$$(cat /tmp/boot.sh)"
+            enderecos=$$(echo $$DOMINIOS | sed 's/ /, /g')
+            if docker run $$comum -p 80:80 -p 443:443 -v murinoi_caddy_data:/data \
+                -e "SITE_ADDR=$$enderecos" $$IMG sh -c "$$(cat /tmp/boot.sh)"; then
+              echo "portas 80/443 livres: Caddy direto com HTTPS"
+            else
+              docker rm -f $$NOME >/dev/null 2>&1 || true
+              echo "portas 80/443 ocupadas por outro programa: site na porta 8080 (http://IP-DA-VPS:8080)"
+              docker run $$comum -p 8080:80 "$$@" -e "SITE_ADDR=:80" $$IMG sh -c "$$(cat /tmp/boot.sh)"
+            fi
           fi
         }
-
         subir
         # confere a cada hora se o site continua de pé
         while true; do
