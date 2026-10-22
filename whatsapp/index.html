@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Murinoi no WhatsApp</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f7f3ee;color:#2e2b33;font:17px/1.6 system-ui,-apple-system,sans-serif;text-align:center}
+img{width:72px;height:72px}
+a{color:#9b6f7d}
+</style>
+</head>
+<body>
+<main><img src="/favicon.svg" alt=""><p>Abrindo o WhatsApp da Murinoi…</p><p><a id="ir" href="/#contato">Toque aqui se não abrir</a></p></main>
+<script>
+// Leva direto para a conversa. Use ?texto=... para trocar a mensagem inicial.
+const WA_K = 'IyIkJSUuLy4uJSUiIg==';
+const q = new URLSearchParams(location.search);
+const msg = q.get('texto') || q.get('text') || 'Olá! Vim pelo site da Murinoi.';
+const url = 'https://wa.me/' + [...atob(WA_K)].map(c => String.fromCharCode(c.charCodeAt(0) ^ 23)).reverse().join('') + '?text=' + encodeURIComponent(msg);
+document.getElementById('ir').href = url;
+location.replace(url);
+</script>
+</body>
+</html>
