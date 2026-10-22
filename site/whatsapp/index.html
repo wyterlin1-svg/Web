@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M3BR4B8W4D"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-M3BR4B8W4D');
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
@@ -21,7 +30,11 @@ const q = new URLSearchParams(location.search);
 const msg = q.get('texto') || q.get('text') || 'Olá! Vim pelo site da Murinoi.';
 const url = 'https://wa.me/' + [...atob(WA_K)].map(c => String.fromCharCode(c.charCodeAt(0) ^ 23)).reverse().join('') + '?text=' + encodeURIComponent(msg);
 document.getElementById('ir').href = url;
-location.replace(url);
+// registra o contato no Google Analytics antes de sair (no máximo 0,8 s de espera)
+let foi = false;
+const ir = () => { if (!foi) { foi = true; location.replace(url); } };
+gtag('event', 'generate_lead', { method: 'whatsapp', origem: q.get('origem') || 'link', event_callback: ir });
+setTimeout(ir, 800);
 </script>
 </body>
 </html>
