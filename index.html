@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M3BR4B8W4D"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-M3BR4B8W4D');
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Murinoi - Soluções Inteligentes</title>
@@ -681,7 +690,7 @@ const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Mat
 $('#yr').textContent = new Date().getFullYear(); $$('.yr').forEach(e => e.textContent = new Date().getFullYear());
 /* WhatsApp: único canal de contato. O número fica codificado e só é montado no clique. */
 const waUrl = text => WHATSAPP_LINK ? WHATSAPP_LINK : `https://wa.me/${[...atob(WA_K)].map(c => String.fromCharCode(c.charCodeAt(0) ^ 23)).reverse().join('')}?text=${encodeURIComponent(text)}`;
-const openWa = text => { const u = waUrl(text), w = open(u, '_blank'); if (w) w.opener = null; else location.href = u; };
+const openWa = text => { gtag('event', 'generate_lead', { method: 'whatsapp', origem: 'site' }); const u = waUrl(text), w = open(u, '_blank'); if (w) w.opener = null; else location.href = u; };
 
 /* ---------- texto ---------- */
 const secs = $$('.sec'), N = secs.length;
