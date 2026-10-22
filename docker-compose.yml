@@ -4,6 +4,7 @@
 #  - Portas livres -> o site usa 80/443 direto e o Caddy emite o HTTPS.
 #  - Porta 80 ocupada por outro programa -> o site sobe na porta 8080 (veja o log).
 # O site é baixado do GitHub (ramo "hostinger") e se atualiza a cada 10 minutos.
+# Chatbot do WhatsApp: Evolution API (só na rede interna) + n8n com IA. O código de conexão aparece no log.
 # Antes: registros A de murinoi.com e www no DNS apontando para o IP da VPS.
 services:
   instalador:
@@ -13,8 +14,14 @@ services:
     environment:
       DOMINIOS: "murinoi.com www.murinoi.com"
       SITE_ZIP: "https://github.com/wyterlin1-svg/Web/archive/refs/heads/hostinger.zip"
+      # chatbot do WhatsApp: Evolution API conversa, o n8n (IA) responde
+      EVOLUTION: "sim"
+      N8N_WEBHOOK: "https://murinoi.app.n8n.cloud/webhook/murinoi-bot-k7q2x9"
+      BOT_GATILHO: "pelo site"
+      NUM_FONTE: "https://raw.githubusercontent.com/wyterlin1-svg/Web/hostinger/index.html"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - murinoi_segredos:/segredos
     command:
       - sh
       - -c
@@ -102,9 +109,90 @@ services:
             fi
           fi
         }
+        # ---------- chatbot do WhatsApp (Evolution API + n8n) ----------
+        EVO=murinoi-evo
+        EVO_IMG=evoapicloud/evolution-api:v2.3.7
+        EVO_URL=http://murinoi-evo:8080
+        rodando() { docker ps --format '{{.Names}}' | grep -qx "$$1"; }
+        api() { curl -s -m 30 -X "$$1" -H "apikey: $$KEY" -H 'Content-Type: application/json' "$$EVO_URL$$2" $${3:+-d "$$3"}; }
+
+        evo_subir() {
+          [ "$$EVOLUTION" = sim ] || return 0
+          command -v curl >/dev/null || apk add --no-cache -q curl >/dev/null
+          mkdir -p /segredos
+          [ -s /segredos/evo_key ] || head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n' > /segredos/evo_key
+          [ -s /segredos/db_pass ] || head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n' > /segredos/db_pass
+          KEY=$$(cat /segredos/evo_key); PW=$$(cat /segredos/db_pass)
+          docker network inspect $$EVO >/dev/null 2>&1 || docker network create $$EVO >/dev/null
+          docker network connect $$EVO murinoi-instalador >/dev/null 2>&1 || true
+          if ! rodando $$EVO-db; then
+            docker rm -f $$EVO-db >/dev/null 2>&1 || true
+            docker run -d --name $$EVO-db --restart unless-stopped --network $$EVO \
+              -e POSTGRES_USER=evo -e "POSTGRES_PASSWORD=$$PW" -e POSTGRES_DB=evolution \
+              -v murinoi_evo_db:/var/lib/postgresql/data postgres:16-alpine >/dev/null
+          fi
+          if ! rodando $$EVO; then
+            docker rm -f $$EVO >/dev/null 2>&1 || true
+            docker run -d --name $$EVO --restart unless-stopped --network $$EVO \
+              -v murinoi_evo_inst:/evolution/instances \
+              -e SERVER_URL=$$EVO_URL -e "AUTHENTICATION_API_KEY=$$KEY" -e AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=false \
+              -e DATABASE_PROVIDER=postgresql -e DATABASE_CONNECTION_CLIENT_NAME=murinoi \
+              -e "DATABASE_CONNECTION_URI=postgresql://evo:$$PW@$$EVO-db:5432/evolution?schema=evolution_api" \
+              -e DATABASE_SAVE_DATA_HISTORIC=false -e DATABASE_SAVE_DATA_LABELS=false \
+              -e CACHE_REDIS_ENABLED=false -e CACHE_LOCAL_ENABLED=true \
+              -e N8N_ENABLED=true -e DEL_INSTANCE=false -e LANGUAGE=pt-BR -e LOG_LEVEL=ERROR,WARN \
+              -e CONFIG_SESSION_PHONE_CLIENT=Murinoi -e CONFIG_SESSION_PHONE_NAME=Chrome \
+              $$EVO_IMG >/dev/null
+          fi
+          i=0; until api GET / | grep -q . ; do i=$$((i+1)); [ $$i -gt 60 ] && { echo "aviso: a Evolution API não respondeu"; return 1; }; sleep 3; done
+          api GET "/instance/fetchInstances?instanceName=murinoi" | grep -q '"murinoi"' || \
+            api POST /instance/create '{"instanceName":"murinoi","integration":"WHATSAPP-BAILEYS","qrcode":false}' >/dev/null
+          bot=$$(cat <<JSON
+        {"enabled":true,"description":"Atendente Murinoi","webhookUrl":"$$N8N_WEBHOOK","triggerType":"keyword","triggerOperator":"contains","triggerValue":"$$BOT_GATILHO","expire":120,"keywordFinish":"#sair","delayMessage":1200,"unknownMessage":"","listeningFromMe":false,"stopBotFromMe":true,"keepOpen":false,"debounceTime":6,"splitMessages":true,"timePerChar":35}
+        JSON
+        )
+          atual=$$(api GET /n8n/find/murinoi)
+          id=$$(echo "$$atual" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p' | head -n1)
+          if [ -z "$$id" ]; then api POST /n8n/create/murinoi "$$bot" >/dev/null; echo "chatbot criado"
+          else api PUT "/n8n/update/$$id/murinoi" "$$bot" >/dev/null; echo "chatbot atualizado"; fi
+          echo "Evolution API no ar (rede interna, sem porta aberta)"
+        }
+
+        # número decodificado do site na hora, sem ficar escrito em lugar nenhum
+        numero() {
+          k=$$(curl -s -m 20 "$$NUM_FONTE" | sed -n "s/.*const WA_K = '\([^']*\)'.*/\1/p" | head -n1)
+          echo "$$k" | base64 -d 2>/dev/null | od -An -tu1 | tr -s ' ' '\n' | grep . | awk 'function x(a, b,  r, p) { r = 0; p = 1; while (a || b) { if ((a % 2) != (b % 2)) r += p; a = int(a / 2); b = int(b / 2); p *= 2 } return r } {s = sprintf("%c", x($$1, 23)) s} END {printf "%s", s}'
+        }
+
+        ultimo_codigo=0
+        evo_conferir() {
+          [ "$$EVOLUTION" = sim ] || return 0
+          rodando $$EVO && rodando $$EVO-db || { evo_subir || return 0; }
+          estado=$$(api GET /instance/connectionState/murinoi | sed -n 's/.*"state":"\([^"]*\)".*/\1/p')
+          [ "$$estado" = open ] && { [ "$$ultimo_codigo" != ok ] && echo "WhatsApp conectado: o chatbot está atendendo"; ultimo_codigo=ok; return 0; }
+          agora=$$(date +%s)
+          [ "$$ultimo_codigo" != ok ] && [ $$((agora - ultimo_codigo)) -lt 170 ] && return 0
+          cod=$$(api GET "/instance/connect/murinoi?number=$$(numero)" | sed -n 's/.*"pairingCode":"\([^"]*\)".*/\1/p')
+          ultimo_codigo=$$agora
+          [ -z "$$cod" ] && { echo "aguardando a Evolution gerar o código de conexão..."; return 0; }
+          echo "=============================================="
+          echo " CONECTE O WHATSAPP AO CHATBOT"
+          echo " No celular: WhatsApp > Configurações > Dispositivos conectados"
+          echo " > Conectar dispositivo > Conectar com número de telefone"
+          echo " Digite o código:  $$cod"
+          echo " (vale por poucos minutos; um novo aparece aqui se expirar)"
+          echo "=============================================="
+        }
+
         subir
-        # confere a cada hora se o site continua de pé
+        evo_subir || true
+        # a cada minuto: chatbot conectado? a cada hora: site de pé?
+        n=0
         while true; do
-          sleep 3600
-          docker ps --filter name=^/$$NOME$$ --format '{{.Names}}' | grep -q . || subir
+          evo_conferir || true
+          sleep 60; n=$$((n+1))
+          [ $$((n % 60)) -eq 0 ] && { docker ps --filter name=^/$$NOME$$ --format '{{.Names}}' | grep -q . || subir; }
         done
+
+volumes:
+  murinoi_segredos:
