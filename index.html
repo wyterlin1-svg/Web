@@ -447,6 +447,17 @@ h2{font-size:clamp(1.9rem,min(4.4vw,6.6vh),3.8rem)}
 .ai-sug[hidden]{display:none}
 .ai-sug button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font:400 .8125rem var(--sans);color:var(--fg);cursor:pointer;transition:border-color .2s,background .2s}
 .ai-sug button:hover{border-color:#a28fbc;background:#faf7fb}
+.ai-m.bot.voz{position:relative;padding-right:46px}
+.ai-ouvir{position:absolute;right:8px;bottom:8px;width:28px;height:28px;border-radius:50%;border:1px solid #ddd3e3;background:#fff;color:#8a7aa6;display:grid;place-items:center;cursor:pointer;padding:0;transition:background .2s,color .2s,transform .2s}
+.ai-ouvir:hover{transform:scale(1.08);color:var(--fg)}
+.ai-ouvir[data-estado=tocando]{background:var(--fg);color:#fff;border-color:var(--fg)}
+.ai-ouvir svg{width:13px;height:13px}
+.ai-f .ai-mic[hidden]{display:none}
+.ai-f .ai-mic{background:transparent;color:#8a7aa6;border:1px solid #ddd3e3}
+.ai-f .ai-mic:not(:disabled):hover{color:var(--fg);transform:none}
+.ai-f .ai-mic.on{background:#b98393;border-color:#b98393;color:#fff;animation:aiMic 1.4s infinite}
+@keyframes aiMic{0%{box-shadow:0 0 0 0 rgba(185,131,147,.5)}70%{box-shadow:0 0 0 12px rgba(185,131,147,0)}100%{box-shadow:0 0 0 0 rgba(185,131,147,0)}}
+.ai-f textarea.ouvindo::placeholder{color:#b98393}
 .ai-sep{align-self:stretch;display:flex;align-items:center;gap:10px;margin:6px 0;font:400 .6875rem var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
 .ai-sep::before,.ai-sep::after{content:"";flex:1;height:1px;background:var(--line)}
 .ai-done{align-self:stretch;border:1px solid #d8cfe0;background:#fff;border-radius:18px;padding:14px 16px;font-size:.875rem;color:var(--body);display:grid;gap:10px;animation:aiIn .35s}
@@ -464,7 +475,7 @@ h2{font-size:clamp(1.9rem,min(4.4vw,6.6vh),3.8rem)}
 .spi{right:clamp(96px,9vw,130px)}
 @media (max-width:900px){.ai-fab .ai-tip{display:none}}
 @media (max-width:560px){.ai-box{right:0;bottom:0;width:100vw;height:100dvh;border-radius:0;border:0}.ai-fab .ai-tip{display:none}.ai-fab .ai-ic{width:54px;height:54px}.ai-fab::after{width:54px;height:54px}}
-@media (prefers-reduced-motion:reduce){.ai-fab::after,.ai-dots i,.ai-m{animation:none}}
+@media (prefers-reduced-motion:reduce){.ai-fab::after,.ai-dots i,.ai-m,.ai-f .ai-mic.on{animation:none}}
 
 .mail{display:inline-flex;align-items:center;gap:10px;justify-self:start;color:var(--mute);font-size:.9375rem;text-decoration:none}
 .mail svg{width:20px;height:20px;flex:none;color:#a7798a}
@@ -722,7 +733,7 @@ window.__boot = (() => {
   <header class="ai-hd"><svg viewBox="0 0 48 48" aria-hidden="true" class="ai-ic"><defs><linearGradient id="aig3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b9ac0"/><stop offset=".5" stop-color="#a28fbc"/><stop offset="1" stop-color="#c08d9c"/></linearGradient></defs><circle cx="24" cy="24" r="23" fill="url(#aig3)"/><path d="M24 11c1.2 6.6 4.4 9.8 11 11-6.6 1.2-9.8 4.4-11 11-1.2-6.6-4.4-9.8-11-11 6.6-1.2 9.8-4.4 11-11z" fill="#fff"/><circle cx="34.5" cy="13.5" r="2.4" fill="#fff" opacity=".85"/></svg><div><strong id="aiTit">Nina · Murinoi</strong><small>Agente de IA · responde na hora</small></div><button class="ai-x" id="aiX" type="button" aria-label="Fechar conversa">×</button></header>
   <div class="ai-msgs" id="aiMsgs" aria-live="polite"></div>
   <div class="ai-sug" id="aiSug"><button type="button">Quero um app</button><button type="button">Automatizar meu negócio</button><button type="button">Preciso de um site</button><button type="button">Tenho só uma ideia</button></div>
-  <form class="ai-f" id="aiF"><textarea id="aiIn" rows="1" maxlength="1200" placeholder="Escreva sua mensagem…" aria-label="Sua mensagem"></textarea><button type="submit" id="aiGo" aria-label="Enviar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>
+  <form class="ai-f" id="aiF"><textarea id="aiIn" rows="1" maxlength="1200" placeholder="Escreva sua mensagem…" aria-label="Sua mensagem"></textarea><button type="button" class="ai-mic" id="aiMic" aria-label="Falar (ditar mensagem)" title="Falar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><button type="submit" id="aiGo" aria-label="Enviar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>
   <p class="ai-nota">Conversa atendida por IA. Veja a <a href="privacidade.html">privacidade</a>.</p>
 </section>
 <script>
@@ -809,15 +820,78 @@ const aiAgendar = () => {
   if (aiMem.pronto && !aiMem.encerrado && aiMem.fim) aiTimer = setTimeout(aiEncerrar, Math.max(0, aiMem.fim - Date.now()));
 };
 const aiNovo = () => {
-  Object.assign(aiMem, {id: aiNovoId(), log: [], pronto: false, resumo: '', encerrado: false, fim: 0});
+  Object.assign(aiMem, {id: aiNovoId(), log: [], pronto: false, resumo: '', atendente: false, encerrado: false, fim: 0});
   aiLead = false; aiMsgs.querySelectorAll('.ai-done').forEach(c => c.classList.add('velho'));
   aiSep('Novo atendimento'); aiSalvar();
 };
-const aiBolha = (txt, quem) => { const el = document.createElement('div'); el.className = 'ai-m ' + quem; el.textContent = txt; aiMsgs.appendChild(el); aiMsgs.scrollTop = aiMsgs.scrollHeight; return el; };
-const aiConcluir = resumo => {
+const aiBolha = (txt, quem) => { const el = document.createElement('div'); el.className = 'ai-m ' + quem; el.textContent = txt; if (quem === 'bot' && txt) aiVozBotao(el, txt); aiMsgs.appendChild(el); aiMsgs.scrollTop = aiMsgs.scrollHeight; return el; };
+/* ouvir as respostas da Nina (voz do próprio aparelho, sem custo) */
+const tts = window.speechSynthesis;
+const AI_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>', AI_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>';
+let aiVoz = null, aiFalando = null;
+const aiEscolherVoz = () => {
+  const nota = v => (/pt[-_]BR/i.test(v.lang) ? 20 : /^pt/i.test(v.lang) ? 5 : -99) + (/natural|neural|premium|enhanced|aprimorad/i.test(v.name) ? 6 : 0) + (/google/i.test(v.name) ? 4 : 0) + (/luciana|francisca|thalita|vit[oó]ria|camila/i.test(v.name) ? 3 : 0);
+  aiVoz = tts.getVoices().filter(v => nota(v) > 0).sort((a, b) => nota(b) - nota(a))[0] || null;
+};
+if (tts) { aiEscolherVoz(); tts.addEventListener && tts.addEventListener('voiceschanged', aiEscolherVoz); }
+const aiPartes = t => (t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').match(/[^.!?…]+[.!?…]*/g) || []).map(x => x.trim()).filter(Boolean);
+const aiIcone = (b, estado) => { b.dataset.estado = estado; b.innerHTML = estado === 'tocando' ? AI_PAUSE : AI_PLAY; b.setAttribute('aria-label', estado === 'tocando' ? 'Pausar leitura' : estado === 'pausado' ? 'Continuar leitura' : 'Ouvir resposta'); };
+const aiPararVoz = () => { const f = aiFalando; if (!f) return; aiFalando = null; tts.cancel(); aiIcone(f.btn, 'parado'); };
+const aiFalarParte = () => {
+  const f = aiFalando; if (!f) return;
+  if (f.i >= f.partes.length) { aiFalando = null; aiIcone(f.btn, 'parado'); return; }
+  const u = new SpeechSynthesisUtterance(f.partes[f.i]);
+  u.lang = 'pt-BR'; if (aiVoz) u.voice = aiVoz; u.rate = 1.03;
+  u.onend = u.onerror = () => { if (aiFalando !== f || f.pausado) return; f.i++; aiFalarParte(); };
+  tts.speak(u);
+};
+function aiVozBotao(el, txt) {
+  if (!tts) return;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'ai-ouvir'; aiIcone(b, 'parado');
+  b.onclick = () => {
+    const f = aiFalando;
+    if (f && f.btn === b) {
+      if (f.pausado) { f.pausado = false; aiIcone(b, 'tocando'); aiFalarParte(); }
+      else { f.pausado = true; tts.cancel(); aiIcone(b, 'pausado'); }
+      return;
+    }
+    aiPararVoz(); aiPararMic();
+    aiFalando = {btn: b, partes: aiPartes(txt), i: 0, pausado: false}; aiIcone(b, 'tocando'); tts.cancel(); aiFalarParte();
+  };
+  el.classList.add('voz'); el.appendChild(b);
+}
+/* falar em vez de digitar (reconhecimento de voz do navegador, em português) */
+const AiSR = window.SpeechRecognition || window.webkitSpeechRecognition, aiMic = $('#aiMic');
+let aiPararMic = () => {};
+if (!AiSR) aiMic.hidden = true;
+else {
+  let rec = null, ouvindo = false;
+  aiPararMic = () => { if (!ouvindo) return; ouvindo = false; aiMic.classList.remove('on'); aiIn.classList.remove('ouvindo'); aiIn.placeholder = 'Escreva sua mensagem…'; aiMic.setAttribute('aria-label', 'Falar (ditar mensagem)'); try { rec.stop(); } catch (_) {} };
+  aiMic.addEventListener('click', () => {
+    if (ouvindo) return aiPararMic();
+    aiPararVoz();
+    const base = aiIn.value.trim() ? aiIn.value.trim() + ' ' : '';
+    let fixo = '';
+    rec = new AiSR(); rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
+    rec.onresult = e => {
+      let prov = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) { const r = e.results[i]; if (r.isFinal) fixo += (fixo && !/\s$/.test(fixo) ? ' ' : '') + r[0].transcript.trim(); else prov += r[0].transcript; }
+      let t = (base + fixo + (prov ? ' ' + prov.trim() : '')).replace(/\s+/g, ' ').trimStart();
+      aiIn.value = t.charAt(0).toUpperCase() + t.slice(1);
+      aiIn.dispatchEvent(new Event('input'));
+    };
+    rec.onerror = e => { if (/not-allowed|service-not-allowed|audio-capture/.test(e.error)) { aiPararMic(); aiBolha('Para falar comigo por voz, permita o uso do microfone no navegador.', 'bot'); } };
+    rec.onend = () => { if (ouvindo) { try { rec.start(); } catch (_) { aiPararMic(); } } };
+    ouvindo = true; aiMic.classList.add('on'); aiIn.classList.add('ouvindo'); aiIn.placeholder = 'Pode falar, estou ouvindo…'; aiMic.setAttribute('aria-label', 'Parar de ouvir');
+    try { rec.start(); } catch (_) { aiPararMic(); }
+  });
+}
+const aiConcluir = (resumo, atendente) => {
   if (aiMsgs.querySelector('.ai-done.ok:not(.velho)')) return;
   const c = document.createElement('div'); c.className = 'ai-done ok';
-  c.innerHTML = '<strong>✓ Pronto! A equipe da Murinoi já recebeu o seu pedido.</strong><span>Quer agilizar? Envie o resumo pelo WhatsApp.</span><button class="btn" type="button">Enviar resumo no WhatsApp</button>';
+  c.innerHTML = atendente
+    ? '<strong>🙋 Um atendente da Murinoi já foi avisado.</strong><span>Ele vai falar com você pelo contato que você deixou. Se preferir, chame agora no WhatsApp.</span><button class="btn" type="button">Falar com um atendente no WhatsApp</button>'
+    : '<strong>✓ Pronto! A equipe da Murinoi já recebeu o seu pedido.</strong><span>Quer agilizar? Envie o resumo pelo WhatsApp.</span><button class="btn" type="button">Enviar resumo no WhatsApp</button>';
   c.querySelector('button').onclick = () => openWa('Olá, Murinoi! Vim pelo site e conversei com a Nina.\n\n' + (resumo || ''));
   aiMsgs.appendChild(c); aiMsgs.scrollTop = aiMsgs.scrollHeight;
   if (!aiLead) { aiLead = true; gtag('event', 'generate_lead', { method: 'agente_ia', origem: 'site' }); }
@@ -831,7 +905,7 @@ const aiFalha = () => {
 };
 const aiEnviar = async txt => {
   txt = (txt || '').trim(); if (!txt || aiOcupada) return;
-  clearTimeout(aiTimer);
+  clearTimeout(aiTimer); aiPararMic(); aiPararVoz();
   if (aiMem.encerrado) aiNovo();
   aiOcupada = true; aiGo.disabled = true; aiSug.hidden = true;
   aiBolha(txt, 'eu'); aiMem.log.push(['eu', txt]); aiSalvar();
@@ -847,8 +921,8 @@ const aiEnviar = async txt => {
   };
   try {
     const d = await pedir().catch(() => new Promise(ok => setTimeout(ok, 800)).then(pedir));
-    dig.textContent = d.resposta; aiMem.log.push(['bot', d.resposta]);
-    if (d.pronto) { aiMem.pronto = true; aiMem.resumo = d.resumo; aiConcluir(d.resumo); }
+    dig.textContent = d.resposta; aiVozBotao(dig, d.resposta); aiMem.log.push(['bot', d.resposta]);
+    if (d.pronto || d.atendente) { aiMem.pronto = true; aiMem.resumo = d.resumo; if (d.atendente) aiMem.atendente = true; aiConcluir(d.resumo, aiMem.atendente); }
     aiSalvar();
   } catch (_) { dig.remove(); aiFalha(); }
   if (aiMem.pronto) { aiMem.fim = Date.now() + AI_ESPERA; aiSalvar(); aiAgendar(); }
@@ -860,7 +934,7 @@ const aiAbrir = primeira => {
     if (aiMem.log.length) {
       const fim = aiMem.encerrado ? aiMem.log[aiMem.log.length - 1] : null;
       (fim ? aiMem.log.slice(0, -1) : aiMem.log).forEach(([q, t]) => aiBolha(t, q)); aiSug.hidden = true;
-      if (aiMem.pronto) aiConcluir(aiMem.resumo);
+      if (aiMem.pronto) aiConcluir(aiMem.resumo, aiMem.atendente);
       if (fim) { aiBolha(fim[1], fim[0]); aiSep('Atendimento encerrado'); }
     }
     else aiBolha('Olá! Eu sou a Nina, agente de IA da Murinoi. Me conta: o que mais toma o seu tempo ou o seu dinheiro hoje?', 'bot');
