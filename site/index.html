@@ -836,8 +836,10 @@ const aiNovo = () => {
   aiSep('Novo atendimento'); aiSalvar();
 };
 const aiBolha = (txt, quem) => { const el = document.createElement('div'); el.className = 'ai-m ' + quem; el.textContent = txt; if (quem === 'bot' && txt) aiVozBotao(el, txt); aiMsgs.appendChild(el); aiMsgs.scrollTop = aiMsgs.scrollHeight; return el; };
-/* ouvir as respostas da Nina (voz do próprio aparelho, sem custo) */
-const tts = window.speechSynthesis;
+/* ouvir as respostas da Nina: voz neural de mulher (servidor /voz, com cache); sem ele, a voz do próprio aparelho */
+const tts = window.speechSynthesis, aiAudio = window.Audio ? new Audio() : null;
+let aiReal = !!aiAudio && location.protocol === 'https:';
+const aiVozUrl = t => '/voz?t=' + encodeURIComponent(t);
 const AI_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>', AI_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>';
 let aiVoz = null, aiFalando = null;
 const aiEscolherVoz = () => {
@@ -845,29 +847,41 @@ const aiEscolherVoz = () => {
   aiVoz = tts.getVoices().filter(v => nota(v) > 0).sort((a, b) => nota(b) - nota(a))[0] || null;
 };
 if (tts) { aiEscolherVoz(); tts.addEventListener && tts.addEventListener('voiceschanged', aiEscolherVoz); }
-const aiPartes = t => (t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').match(/[^.!?…]+[.!?…]*/g) || []).map(x => x.trim()).filter(Boolean);
+/* frases agrupadas em blocos de até ~300 letras: menos pedidos e entonação contínua */
+const aiPartes = t => (t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').replace(/ ([,.!?;:])/g, '$1').match(/[^.!?…]+[.!?…]*/g) || []).map(x => x.trim()).filter(Boolean)
+  .flatMap(x => x.match(/.{1,300}(\s|$)/g) || [x]).reduce((a, x) => { const u = a.length - 1; if (u >= 0 && (a[u] + ' ' + x).length <= 300) a[u] += ' ' + x.trim(); else a.push(x.trim()); return a; }, []);
 const aiIcone = (b, estado) => { b.dataset.estado = estado; b.innerHTML = estado === 'tocando' ? AI_PAUSE : AI_PLAY; b.setAttribute('aria-label', estado === 'tocando' ? 'Pausar leitura' : estado === 'pausado' ? 'Continuar leitura' : 'Ouvir resposta'); };
-const aiPararVoz = () => { const f = aiFalando; if (!f) return; aiFalando = null; tts.cancel(); aiIcone(f.btn, 'parado'); };
+const aiCalar = () => { if (aiAudio) { aiAudio.onended = aiAudio.onerror = null; aiAudio.pause(); } if (tts) tts.cancel(); };
+const aiPararVoz = () => { const f = aiFalando; if (!f) return; aiFalando = null; aiCalar(); aiIcone(f.btn, 'parado'); };
 const aiFalarParte = () => {
   const f = aiFalando; if (!f) return;
-  if (f.i >= f.partes.length) { aiFalando = null; aiIcone(f.btn, 'parado'); return; }
+  if (f.i >= f.partes.length || (!aiReal && !tts)) { aiFalando = null; aiIcone(f.btn, 'parado'); return; }
+  f.real = aiReal;
+  if (aiReal) {
+    aiAudio.onended = () => { if (aiFalando !== f) return; f.i++; aiFalarParte(); };
+    aiAudio.onerror = () => { if (aiFalando !== f) return; aiReal = false; aiFalarParte(); };   /* servidor fora: segue com a voz do aparelho */
+    aiAudio.src = aiVozUrl(f.partes[f.i]);
+    aiAudio.play().catch(e => { if (e.name === 'NotAllowedError' && aiFalando === f) { f.pausado = true; aiIcone(f.btn, 'pausado'); } });
+    if (f.partes[f.i + 1]) fetch(aiVozUrl(f.partes[f.i + 1])).catch(() => {});   /* já prepara o próximo bloco */
+    return;
+  }
   const u = new SpeechSynthesisUtterance(f.partes[f.i]);
   u.lang = 'pt-BR'; if (aiVoz) u.voice = aiVoz; u.rate = 1.03;
   u.onend = u.onerror = () => { if (aiFalando !== f || f.pausado) return; f.i++; aiFalarParte(); };
   tts.speak(u);
 };
 function aiVozBotao(el, txt) {
-  if (!tts) return;
+  if (!tts && !aiAudio) return;
   const b = document.createElement('button'); b.type = 'button'; b.className = 'ai-ouvir'; aiIcone(b, 'parado');
   b.onclick = () => {
     const f = aiFalando;
     if (f && f.btn === b) {
-      if (f.pausado) { f.pausado = false; aiIcone(b, 'tocando'); aiFalarParte(); }
-      else { f.pausado = true; tts.cancel(); aiIcone(b, 'pausado'); }
+      if (f.pausado) { f.pausado = false; aiIcone(b, 'tocando'); if (f.real) aiAudio.play().catch(() => {}); else aiFalarParte(); }
+      else { f.pausado = true; if (f.real) aiAudio.pause(); else tts.cancel(); aiIcone(b, 'pausado'); }
       return;
     }
     aiPararVoz(); aiPararMic();
-    aiFalando = {btn: b, partes: aiPartes(txt), i: 0, pausado: false}; aiIcone(b, 'tocando'); tts.cancel(); aiFalarParte();
+    aiFalando = {btn: b, partes: aiPartes(txt), i: 0, pausado: false}; aiIcone(b, 'tocando'); aiCalar(); aiFalarParte();
   };
   el.classList.add('voz'); el.appendChild(b);
 }
