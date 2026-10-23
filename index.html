@@ -416,6 +416,54 @@ h2{font-size:clamp(1.9rem,min(4.4vw,6.6vh),3.8rem)}
 @media (max-width:420px){.ben div{grid-template-columns:1fr;gap:4px}}
 @media (max-height:780px) and (min-aspect-ratio:1/1){.ben,.how{margin-top:var(--f3)}.how{gap:var(--f2)}}
 .wab{gap:10px}
+/* agente de IA (Nina) */
+.ai-fab{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:15;display:flex;align-items:center;gap:10px;border:0;background:none;padding:0;cursor:pointer;font:400 .875rem var(--sans);color:var(--fg)}
+.ai-fab .ai-ic{width:58px;height:58px;border-radius:50%;box-shadow:0 14px 34px -12px rgba(110,90,140,.65);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.ai-fab:hover .ai-ic{transform:scale(1.06) rotate(-6deg)}
+.ai-fab .ai-tip{background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:999px;padding:8px 14px;box-shadow:0 10px 30px -18px rgba(46,43,51,.45);white-space:nowrap;transition:opacity .4s,transform .4s}
+.ai-fab .ai-tip b{font-weight:500}
+.ai-fab.quiet .ai-tip{opacity:0;transform:translateX(8px);pointer-events:none}
+.ai-fab::after{content:"";position:absolute;right:0;bottom:0;width:58px;height:58px;border-radius:50%;box-shadow:0 0 0 0 rgba(162,143,188,.45);animation:aiPulse 2.8s 3s infinite}
+@keyframes aiPulse{0%{box-shadow:0 0 0 0 rgba(162,143,188,.45)}70%{box-shadow:0 0 0 16px rgba(162,143,188,0)}100%{box-shadow:0 0 0 0 rgba(162,143,188,0)}}
+.ai-open .ai-fab{opacity:0;pointer-events:none}
+.ai-box{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:16;width:min(390px,calc(100vw - 32px));height:min(600px,calc(100dvh - 32px));display:flex;flex-direction:column;background:rgba(251,249,246,.97);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:24px;box-shadow:0 30px 80px -30px rgba(60,45,80,.55);overflow:hidden;transform-origin:100% 100%;transition:opacity .3s,transform .35s cubic-bezier(.2,.7,.2,1);opacity:0;transform:translateY(12px) scale(.96);pointer-events:none;visibility:hidden}
+.ai-open .ai-box{opacity:1;transform:none;pointer-events:auto;visibility:visible}
+.ai-hd{display:flex;align-items:center;gap:12px;padding:14px 14px 14px 18px;border-bottom:1px solid var(--line)}
+.ai-hd .ai-ic{width:38px;height:38px;flex:none}
+.ai-hd div{flex:1;line-height:1.25}
+.ai-hd strong{display:block;font:500 1rem var(--sans)}
+.ai-hd small{font-size:.75rem;color:var(--mute)}
+.ai-hd small::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#9db594;margin-right:6px;vertical-align:1px}
+.ai-x{border:0;background:none;width:40px;height:40px;border-radius:50%;cursor:pointer;color:var(--mute);font-size:1.4rem;line-height:1}
+.ai-x:hover{background:rgba(46,43,51,.06);color:var(--fg)}
+.ai-msgs{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:18px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+.ai-m{max-width:86%;padding:10px 14px;border-radius:18px;font:300 .9375rem/1.5 var(--sans);white-space:pre-wrap;word-wrap:break-word;animation:aiIn .35s cubic-bezier(.2,.7,.2,1)}
+.ai-m.bot{align-self:flex-start;background:#f1ecf2;border-bottom-left-radius:6px}
+.ai-m.eu{align-self:flex-end;background:linear-gradient(100deg,#dfe3ef,#ead9df);border-bottom-right-radius:6px}
+@keyframes aiIn{from{opacity:0;transform:translateY(6px)}}
+.ai-dots{display:inline-flex;gap:5px;padding:4px 2px}.ai-dots i{width:7px;height:7px;border-radius:50%;background:#b7aac6;animation:aiDot 1.2s infinite}.ai-dots i:nth-child(2){animation-delay:.15s}.ai-dots i:nth-child(3){animation-delay:.3s}
+@keyframes aiDot{0%,60%,100%{opacity:.35;transform:none}30%{opacity:1;transform:translateY(-3px)}}
+.ai-sug{display:flex;flex-wrap:wrap;gap:8px;padding:0 18px 12px}
+.ai-sug[hidden]{display:none}
+.ai-sug button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font:400 .8125rem var(--sans);color:var(--fg);cursor:pointer;transition:border-color .2s,background .2s}
+.ai-sug button:hover{border-color:#a28fbc;background:#faf7fb}
+.ai-done{align-self:stretch;border:1px solid #d8cfe0;background:#fff;border-radius:18px;padding:14px 16px;font-size:.875rem;color:var(--body);display:grid;gap:10px;animation:aiIn .35s}
+.ai-done strong{color:var(--fg);font-weight:500}
+.ai-done .btn{justify-self:start;padding:10px 18px;font-size:.875rem}
+.ai-f:focus-within{background:#fff}
+.ai-f{display:flex;gap:8px;align-items:flex-end;padding:12px 12px 12px 18px;border-top:1px solid var(--line);background:rgba(255,255,255,.6)}
+.ai-f textarea{flex:1;border:0;outline:none;box-shadow:none;padding:8px 0;font:300 1rem/1.4 var(--sans);resize:none;max-height:120px;background:transparent}
+.ai-f button{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--fg);color:#fff;cursor:pointer;display:grid;place-items:center;transition:opacity .2s,transform .2s}
+.ai-f button:disabled{opacity:.35;cursor:default}
+.ai-f button:not(:disabled):hover{transform:scale(1.05)}
+.ai-f svg{width:18px;height:18px}
+.ai-nota{font-size:.6875rem;color:var(--mute);text-align:center;padding:0 18px 10px;background:rgba(255,255,255,.6)}
+.ai-nota a{color:inherit}
+.spi{right:clamp(96px,9vw,130px)}
+@media (max-width:900px){.ai-fab .ai-tip{display:none}}
+@media (max-width:560px){.ai-box{right:0;bottom:0;width:100vw;height:100dvh;border-radius:0;border:0}.ai-fab .ai-tip{display:none}.ai-fab .ai-ic{width:54px;height:54px}.ai-fab::after{width:54px;height:54px}}
+@media (prefers-reduced-motion:reduce){.ai-fab::after,.ai-dots i,.ai-m{animation:none}}
+
 .mail{display:inline-flex;align-items:center;gap:10px;justify-self:start;color:var(--mute);font-size:.9375rem;text-decoration:none}
 .mail svg{width:20px;height:20px;flex:none;color:#a7798a}
 .mail b{font-weight:500;color:var(--fg);border-bottom:1px solid #d9c3cb;transition:border-color .3s}
@@ -530,8 +578,8 @@ h2{font-size:clamp(1.9rem,min(4.4vw,6.6vh),3.8rem)}
     <form id="f" class="rv">
       <label>O que você precisa<textarea id="idea" name="idea" rows="3" placeholder="Ex.: perco muito tempo organizando pedidos no WhatsApp"></textarea></label>
       <label>Seu nome<input id="who" name="who" type="text" autocomplete="name" placeholder="Como podemos te chamar?"></label>
-      <button class="btn wab" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true" class="wai"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>Conversar no WhatsApp</button>
-      <small>Abre o WhatsApp com a sua mensagem pronta.</small>
+      <button class="btn wab" type="submit"><svg viewBox="0 0 48 48" aria-hidden="true" class="wai"><defs><linearGradient id="aig2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b9ac0"/><stop offset=".5" stop-color="#a28fbc"/><stop offset="1" stop-color="#c08d9c"/></linearGradient></defs><circle cx="24" cy="24" r="23" fill="url(#aig2)"/><path d="M24 11c1.2 6.6 4.4 9.8 11 11-6.6 1.2-9.8 4.4-11 11-1.2-6.6-4.4-9.8-11-11 6.6-1.2 9.8-4.4 11-11z" fill="#fff"/><circle cx="34.5" cy="13.5" r="2.4" fill="#fff" opacity=".85"/></svg>Conversar com a Nina (IA)</button>
+      <small>A Nina, nossa agente de IA, entende o que você precisa e já passa tudo pronto para a equipe.</small>
       <a class="mail" id="mail" href="/#contato"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Prefere e-mail? <b id="em">escreva para a gente</b></span></a>
     </form>
     <div class="foot rv"><span>© <span id="yr">2026</span> @murinoi.br · Todos os direitos reservados</span><a href="privacidade.html">Privacidade</a></div>
@@ -667,6 +715,14 @@ window.__boot = (() => {
 })();
 </script>
 
+<button class="ai-fab" id="aiFab" type="button" aria-haspopup="dialog" aria-controls="aiBox"><span class="ai-tip">Fale com a <b>Nina</b> · agente de IA</span><svg viewBox="0 0 48 48" aria-hidden="true" class="ai-ic"><defs><linearGradient id="aig" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b9ac0"/><stop offset=".5" stop-color="#a28fbc"/><stop offset="1" stop-color="#c08d9c"/></linearGradient></defs><circle cx="24" cy="24" r="23" fill="url(#aig)"/><path d="M24 11c1.2 6.6 4.4 9.8 11 11-6.6 1.2-9.8 4.4-11 11-1.2-6.6-4.4-9.8-11-11 6.6-1.2 9.8-4.4 11-11z" fill="#fff"/><circle cx="34.5" cy="13.5" r="2.4" fill="#fff" opacity=".85"/></svg></button>
+<section class="ai-box" id="aiBox" role="dialog" aria-modal="false" aria-labelledby="aiTit" aria-hidden="true">
+  <header class="ai-hd"><svg viewBox="0 0 48 48" aria-hidden="true" class="ai-ic"><defs><linearGradient id="aig3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b9ac0"/><stop offset=".5" stop-color="#a28fbc"/><stop offset="1" stop-color="#c08d9c"/></linearGradient></defs><circle cx="24" cy="24" r="23" fill="url(#aig3)"/><path d="M24 11c1.2 6.6 4.4 9.8 11 11-6.6 1.2-9.8 4.4-11 11-1.2-6.6-4.4-9.8-11-11 6.6-1.2 9.8-4.4 11-11z" fill="#fff"/><circle cx="34.5" cy="13.5" r="2.4" fill="#fff" opacity=".85"/></svg><div><strong id="aiTit">Nina · Murinoi</strong><small>Agente de IA · responde na hora</small></div><button class="ai-x" id="aiX" type="button" aria-label="Fechar conversa">×</button></header>
+  <div class="ai-msgs" id="aiMsgs" aria-live="polite"></div>
+  <div class="ai-sug" id="aiSug"><button type="button">Quero um app</button><button type="button">Automatizar meu negócio</button><button type="button">Preciso de um site</button><button type="button">Tenho só uma ideia</button></div>
+  <form class="ai-f" id="aiF"><textarea id="aiIn" rows="1" maxlength="1200" placeholder="Escreva sua mensagem…" aria-label="Sua mensagem"></textarea><button type="submit" id="aiGo" aria-label="Enviar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>
+  <p class="ai-nota">Conversa atendida por IA. Veja a <a href="privacidade.html">privacidade</a>.</p>
+</section>
 <script>
 /* ===== Configuração ===== */
 /* WhatsApp: se você criar um link curto do WhatsApp Business (wa.me/message/...), cole em WHATSAPP_LINK
@@ -725,9 +781,72 @@ secs.forEach(sec => {
 $('#f').addEventListener('submit', e => {
   e.preventDefault();
   const d = new FormData(e.target), nome = (d.get('who') || '').trim(), idea = (d.get('idea') || '').trim();
-  const body = `Olá, Murinoi!${nome ? ' Sou ' + nome + '.' : ''} Vim pelo site e quero uma solução para o meu negócio.${idea ? '\n\nO que eu preciso: ' + idea : ''}`;
-  openWa(body);
+  const msg = [nome && `Meu nome é ${nome}.`, idea].filter(Boolean).join(' ');
+  aiAbrir(msg || '');
 });
+/* ---------- Nina: agente de IA do site (atende e passa o resumo para a equipe) ---------- */
+const AGENTE_URL = 'https://murinoi.app.n8n.cloud/webhook/murinoi-site-agente';
+const aiBox = $('#aiBox'), aiMsgs = $('#aiMsgs'), aiIn = $('#aiIn'), aiGo = $('#aiGo'), aiSug = $('#aiSug');
+const aiMem = (() => { try { return JSON.parse(sessionStorage.getItem('nina') || 'null'); } catch (_) { return null; } })() || {id: '', log: [], pronto: false};
+if (!aiMem.id) aiMem.id = 'web-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+const aiSalvar = () => { try { sessionStorage.setItem('nina', JSON.stringify(aiMem)); } catch (_) {} };
+let aiOcupada = false, aiLead = false;
+const aiBolha = (txt, quem) => { const el = document.createElement('div'); el.className = 'ai-m ' + quem; el.textContent = txt; aiMsgs.appendChild(el); aiMsgs.scrollTop = aiMsgs.scrollHeight; return el; };
+const aiConcluir = resumo => {
+  if (aiMsgs.querySelector('.ai-done')) return;
+  const c = document.createElement('div'); c.className = 'ai-done';
+  c.innerHTML = '<strong>✓ Pronto! A equipe da Murinoi já recebeu o seu pedido.</strong><span>Quer agilizar? Envie o resumo pelo WhatsApp.</span><button class="btn" type="button">Enviar resumo no WhatsApp</button>';
+  c.querySelector('button').onclick = () => openWa('Olá, Murinoi! Vim pelo site e conversei com a Nina.\n\n' + (resumo || ''));
+  aiMsgs.appendChild(c); aiMsgs.scrollTop = aiMsgs.scrollHeight;
+  if (!aiLead) { aiLead = true; gtag('event', 'generate_lead', { method: 'agente_ia', origem: 'site' }); }
+};
+const aiFalha = () => {
+  aiBolha('Ops, tive um problema para responder agora. Você pode falar com a equipe pelo WhatsApp ou pelo e-mail ' + EMAIL + '.', 'bot');
+  const c = document.createElement('div'); c.className = 'ai-done';
+  c.innerHTML = '<button class="btn" type="button">Falar no WhatsApp</button>';
+  c.querySelector('button').onclick = () => openWa('Olá, Murinoi! Vim pelo site e quero uma solução para o meu negócio.');
+  aiMsgs.appendChild(c);
+};
+const aiEnviar = async txt => {
+  txt = (txt || '').trim(); if (!txt || aiOcupada) return;
+  aiOcupada = true; aiGo.disabled = true; aiSug.hidden = true;
+  aiBolha(txt, 'eu'); aiMem.log.push(['eu', txt]); aiSalvar();
+  aiIn.value = ''; aiIn.style.height = '';
+  const dig = aiBolha('', 'bot'); dig.innerHTML = '<span class="ai-dots" aria-label="Nina está digitando"><i></i><i></i><i></i></span>';
+  const pedir = async () => {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 45000);
+    const r = await fetch(AGENTE_URL, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({sessionId: aiMem.id, message: txt.slice(0, 1200), page: location.href.split('#')[0]}), signal: ctl.signal});
+    clearTimeout(t);
+    const d = await r.json();
+    if (!r.ok || !d.resposta) throw 0;
+    return d;
+  };
+  try {
+    const d = await pedir().catch(() => new Promise(ok => setTimeout(ok, 800)).then(pedir));
+    dig.textContent = d.resposta; aiMem.log.push(['bot', d.resposta]);
+    if (d.pronto) { aiMem.pronto = true; aiMem.resumo = d.resumo; aiConcluir(d.resumo); }
+    aiSalvar();
+  } catch (_) { dig.remove(); aiFalha(); }
+  aiOcupada = false; aiGo.disabled = !aiIn.value.trim(); aiMsgs.scrollTop = aiMsgs.scrollHeight;
+};
+const aiAbrir = primeira => {
+  document.documentElement.classList.add('ai-open'); aiBox.setAttribute('aria-hidden', 'false');
+  if (!aiMsgs.children.length) {
+    if (aiMem.log.length) { aiMem.log.forEach(([q, t]) => aiBolha(t, q)); aiSug.hidden = true; if (aiMem.pronto) aiConcluir(aiMem.resumo); }
+    else aiBolha('Olá! Eu sou a Nina, agente de IA da Murinoi. Me conta: o que mais toma o seu tempo ou o seu dinheiro hoje?', 'bot');
+  }
+  setTimeout(() => aiIn.focus({preventScroll: true}), 250);
+  if (primeira) aiEnviar(primeira);
+};
+const aiFechar = () => { document.documentElement.classList.remove('ai-open'); aiBox.setAttribute('aria-hidden', 'true'); $('#aiFab').focus({preventScroll: true}); };
+$('#aiFab').addEventListener('click', () => aiAbrir());
+$('#aiX').addEventListener('click', aiFechar);
+aiBox.addEventListener('keydown', e => { if (e.key === 'Escape') aiFechar(); });
+$('#aiF').addEventListener('submit', e => { e.preventDefault(); aiEnviar(aiIn.value); });
+aiIn.addEventListener('input', () => { aiGo.disabled = aiOcupada || !aiIn.value.trim(); aiIn.style.height = ''; aiIn.style.height = Math.min(aiIn.scrollHeight, 120) + 'px'; });
+aiIn.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aiEnviar(aiIn.value); } });
+aiSug.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') aiEnviar(e.target.textContent); });
+setTimeout(() => $('#aiFab').classList.add('quiet'), 14000);
 /* e-mail: o endereço é montado aqui para não ser colhido por robôs de spam */
 const EMAIL = ['contato', 'murinoi.com'].join('@');
 $('#em').textContent = EMAIL;
@@ -969,7 +1088,7 @@ document.addEventListener('focusin', e => { const s = e.target.closest && e.targ
 document.addEventListener('focusout', () => { if (lockIdx < 0) return; const k = lockIdx; setTimeout(() => { if (document.activeElement && document.activeElement.matches('input,textarea')) return; lockIdx = -1; scrollTo({top: tops[k], behavior: 'auto'}); }, 350); });
 const IDX = {'#topo': 0, '#sob': 1, '#conta': 3, '#feito': 4, '#contato': N - 1};
 $$('a[href^="#"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); navEl.classList.remove('open'); goTo(IDX[a.getAttribute('href')] || 0); }));
-$('#cc').addEventListener('click', () => { $('#idea').value = `Preciso de: ${bt.textContent[0].toLowerCase() + bt.textContent.slice(1)}. Hoje o meu desafio é `; goTo(N - 1); setTimeout(() => { const t = $('#idea'); t.focus({preventScroll: true}); t.setSelectionRange(t.value.length, t.value.length); }, 900); });
+$('#cc').addEventListener('click', () => aiAbrir(`Quero ${bt.textContent[0].toLowerCase() + bt.textContent.slice(1)}.`));
 
 /* espiral áurea como indicador de progresso */
 const spi = $('#spi'), pBg = spi.querySelector('.bg'), pFg = spi.querySelector('.fg'), pDot = spi.querySelector('circle');
