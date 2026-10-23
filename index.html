@@ -840,6 +840,15 @@ const aiBolha = (txt, quem) => { const el = document.createElement('div'); el.cl
 const tts = window.speechSynthesis, aiAudio = window.Audio ? new Audio() : null;
 let aiReal = !!aiAudio && location.protocol === 'https:';
 const aiVozUrl = t => '/voz?t=' + encodeURIComponent(t);
+/* plano B da voz realista: Gemini TTS pelo n8n (voz feminina), com cache por frase */
+const AI_VOZ2 = 'https://murinoi.app.n8n.cloud/webhook/murinoi-nina-voz', aiVoz2 = new Map();
+let aiFonte = 'site';
+const aiGemini = t => {
+  if (!aiVoz2.has(t)) aiVoz2.set(t, fetch(AI_VOZ2, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({texto: t})})
+    .then(r => { if (!r.ok || !/audio/.test(r.headers.get('content-type') || '')) throw 0; return r.blob(); })
+    .then(b => URL.createObjectURL(b)).catch(e => { aiVoz2.delete(t); throw e; }));
+  return aiVoz2.get(t);
+};
 const AI_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>', AI_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>';
 let aiVoz = null, aiFalando = null;
 const aiEscolherVoz = () => {
@@ -858,11 +867,17 @@ const aiFalarParte = () => {
   if (f.i >= f.partes.length || (!aiReal && !tts)) { aiFalando = null; aiIcone(f.btn, 'parado'); return; }
   f.real = aiReal;
   if (aiReal) {
-    aiAudio.onended = () => { if (aiFalando !== f) return; f.i++; aiFalarParte(); };
-    aiAudio.onerror = () => { if (aiFalando !== f) return; aiReal = false; aiFalarParte(); };   /* servidor fora: segue com a voz do aparelho */
-    aiAudio.src = aiVozUrl(f.partes[f.i]);
-    aiAudio.play().catch(e => { if (e.name === 'NotAllowedError' && aiFalando === f) { f.pausado = true; aiIcone(f.btn, 'pausado'); } });
-    if (f.partes[f.i + 1]) fetch(aiVozUrl(f.partes[f.i + 1])).catch(() => {});   /* já prepara o próximo bloco */
+    const tocar = src => {
+      if (aiFalando !== f) return;
+      aiAudio.onended = () => { if (aiFalando !== f) return; f.i++; aiFalarParte(); };
+      aiAudio.onerror = () => { if (aiFalando !== f) return; if (aiFonte === 'site') aiFonte = 'gemini'; else aiReal = false; aiFalarParte(); };   /* uma fonte falhou: tenta a próxima */
+      aiAudio.src = src;
+      aiAudio.play().catch(e => { if (e.name === 'NotAllowedError' && aiFalando === f) { f.pausado = true; aiIcone(f.btn, 'pausado'); } });
+    };
+    const prox = f.partes[f.i + 1];
+    if (aiFonte === 'site') { tocar(aiVozUrl(f.partes[f.i])); if (prox) fetch(aiVozUrl(prox)).catch(() => {}); return; }
+    aiGemini(f.partes[f.i]).then(tocar, () => { if (aiFalando !== f) return; aiReal = false; aiFalarParte(); });
+    if (prox) aiGemini(prox).catch(() => {});   /* já prepara o próximo bloco */
     return;
   }
   const u = new SpeechSynthesisUtterance(f.partes[f.i]);
@@ -881,7 +896,9 @@ function aiVozBotao(el, txt) {
       return;
     }
     aiPararVoz(); aiPararMic();
-    aiFalando = {btn: b, partes: aiPartes(txt), i: 0, pausado: false}; aiIcone(b, 'tocando'); aiCalar(); aiFalarParte();
+    aiFalando = {btn: b, partes: aiPartes(txt), i: 0, pausado: false}; aiIcone(b, 'tocando'); aiCalar();
+    if (aiReal && aiFonte !== 'site') { aiAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='; aiAudio.play().catch(() => {}); }   /* libera o áudio no iPhone enquanto a voz é gerada */
+    aiFalarParte();
   };
   el.classList.add('voz'); el.appendChild(b);
 }
