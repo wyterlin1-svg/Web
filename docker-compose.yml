@@ -4,6 +4,7 @@
 #  - Portas livres -> o site usa 80/443 direto e o Caddy emite o HTTPS.
 #  - Porta 80 ocupada por outro programa -> o site sobe na porta 8080 (veja o log).
 # O site é baixado do GitHub (ramo "hostinger") e se atualiza a cada 10 minutos.
+# Voz da Nina: vozes neurais de mulher (pt-BR) servidas em /voz, de graça e com cache.
 # Chatbot do WhatsApp: Evolution API (só na rede interna) + n8n com IA. O código de conexão aparece no log.
 # Antes: registros A de murinoi.com e www no DNS apontando para o IP da VPS.
 services:
@@ -18,6 +19,8 @@ services:
       EVOLUTION: "sim"
       N8N_WEBHOOK: "https://murinoi.app.n8n.cloud/webhook/murinoi-bot-k7q2x9"
       BOT_GATILHO: "pelo site"
+      # voz da Nina no site (pt-BR-ThalitaMultilingualNeural ou pt-BR-FranciscaNeural)
+      VOZ_NOME: "pt-BR-ThalitaMultilingualNeural"
       NUM_FONTE: "https://raw.githubusercontent.com/wyterlin1-svg/Web/hostinger/index.html"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -53,6 +56,9 @@ services:
           header @estaticos Cache-Control "public, max-age=86400"
           @paginas path / *.html */
           header @paginas Cache-Control "no-cache"
+          handle /voz {
+            reverse_proxy murinoi-voz:8080
+          }
           file_server
           handle_errors {
             @404 expression {err.status_code} == 404
@@ -116,6 +122,59 @@ services:
         EVO_IMG=evoapicloud/evolution-api:v2.3.7
         EVO_URL=http://murinoi-evo:8080
         rodando() { docker ps --format '{{.Names}}' | grep -qx "$$1"; }
+
+        # ---------- voz da Nina (voz neural de mulher, servida pelo próprio site em /voz) ----------
+        cat > /tmp/voz.py <<'PY'
+        import asyncio, hashlib, os, re, time
+        from aiohttp import web
+        import edge_tts
+        VOZ = os.environ.get('VOZ_NOME', 'pt-BR-ThalitaMultilingualNeural')
+        CACHE = '/cache'; os.makedirs(CACHE, exist_ok=True)
+        ORIGENS = re.compile(r'^https://(www\.)?murinoi\.com(/|$$)|^http://(localhost|127\.0\.0\.1)(:\d+)?(/|$$)')
+        vistos = {}
+        async def falar(req):
+            t = re.sub(r'\s+', ' ', req.query.get('t', '')).strip()
+            if not t or len(t) > 400: raise web.HTTPBadRequest()
+            if not ORIGENS.match(req.headers.get('Referer', '')): raise web.HTTPForbidden()
+            ip = req.headers.get('X-Forwarded-For', req.remote or '').split(',')[0].strip()
+            agora = time.time(); h = [x for x in vistos.get(ip, []) if agora - x < 60]
+            if len(h) >= 40: raise web.HTTPTooManyRequests()
+            vistos[ip] = h + [agora]
+            if len(vistos) > 5000: vistos.clear()
+            arq = os.path.join(CACHE, hashlib.sha1((VOZ + t).encode()).hexdigest() + '.mp3')
+            cab = {'Content-Type': 'audio/mpeg', 'Cache-Control': 'public, max-age=2592000'}
+            if os.path.exists(arq): return web.FileResponse(arq, headers=cab)
+            r = web.StreamResponse(headers=cab); partes = []
+            try:
+                async for c in edge_tts.Communicate(t, VOZ, rate='+4%').stream():
+                    if c['type'] != 'audio': continue
+                    if not partes: await r.prepare(req)
+                    partes.append(c['data']); await r.write(c['data'])
+            except Exception:
+                if not partes: raise web.HTTPBadGateway()
+                return r
+            if not partes: raise web.HTTPBadGateway()
+            with open(arq + '.tmp', 'wb') as f: f.write(b''.join(partes))
+            os.replace(arq + '.tmp', arq)
+            fs = sorted(os.scandir(CACHE), key=lambda e: e.stat().st_mtime)
+            for e in fs[:max(0, len(fs) - 3000)]: os.remove(e.path)
+            await r.write_eof(); return r
+        app = web.Application(); app.router.add_get('/voz', falar)
+        web.run_app(app, port=8080, access_log=None)
+        PY
+        voz_subir() {
+          docker network inspect murinoi-int >/dev/null 2>&1 || docker network create murinoi-int >/dev/null
+          vh=$$(cat /tmp/voz.py | md5sum | cut -c1-12)-$$VOZ_NOME
+          [ "$$(docker inspect -f '{{index .Config.Labels "murinoi.voz"}}' murinoi-voz 2>/dev/null)" = "$$vh" ] || docker rm -f murinoi-voz >/dev/null 2>&1 || true
+          if ! rodando murinoi-voz; then
+            docker rm -f murinoi-voz >/dev/null 2>&1 || true
+            docker run -d --name murinoi-voz --restart unless-stopped --network murinoi-int --label "murinoi.voz=$$vh" \
+              -e "VOZ_NOME=$$VOZ_NOME" -e "VOZ_PY=$$(cat /tmp/voz.py)" -v murinoi_voz_cache:/cache \
+              python:3.12-alpine sh -c 'pip install -q --no-cache-dir edge-tts && exec python -c "$$VOZ_PY"' >/dev/null && echo "voz da Nina no ar ($$VOZ_NOME)"
+          fi
+          docker network connect murinoi-int $$NOME >/dev/null 2>&1 || true
+        }
+
         api() { curl -s -m 30 -X "$$1" -H "apikey: $$KEY" -H 'Content-Type: application/json' "$$EVO_URL$$2" $${3:+-d "$$3"}; }
 
         evo_subir() {
@@ -207,13 +266,14 @@ services:
         }
 
         subir
+        voz_subir || true
         evo_subir || true
         # a cada minuto: chatbot conectado? a cada hora: site de pé?
         n=0
         while true; do
           evo_conferir || true
           sleep 60; n=$$((n+1))
-          [ $$((n % 60)) -eq 0 ] && { docker ps --filter name=^/$$NOME$$ --format '{{.Names}}' | grep -q . || subir; }
+          [ $$((n % 60)) -eq 0 ] && { docker ps --filter name=^/$$NOME$$ --format '{{.Names}}' | grep -q . || { subir; voz_subir || true; }; }
         done
 
 volumes:
