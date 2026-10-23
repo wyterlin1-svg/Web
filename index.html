@@ -453,7 +453,9 @@ h2{font-size:clamp(1.9rem,min(4.4vw,6.6vh),3.8rem)}
 .ai-ouvir[data-estado=tocando]{background:var(--fg);color:#fff;border-color:var(--fg)}
 .ai-ouvir svg{width:13px;height:13px}
 .ai-f .ai-mic[hidden]{display:none}
-.ai-f .ai-mic{background:transparent;color:#8a7aa6;border:1px solid #ddd3e3}
+.ai-f .ai-mic{background:transparent;color:#8a7aa6;border:1px solid #ddd3e3;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.ai-f .ai-mic.on.on{transform:scale(1.12)}
+.ai-f .ai-mic.trans{opacity:.6}
 .ai-f .ai-mic:not(:disabled):hover{color:var(--fg);transform:none}
 .ai-f .ai-mic.on{background:#b98393;border-color:#b98393;color:#fff;animation:aiMic 1.4s infinite}
 @keyframes aiMic{0%{box-shadow:0 0 0 0 rgba(185,131,147,.5)}70%{box-shadow:0 0 0 12px rgba(185,131,147,0)}100%{box-shadow:0 0 0 0 rgba(185,131,147,0)}}
@@ -733,7 +735,7 @@ window.__boot = (() => {
   <header class="ai-hd"><svg viewBox="0 0 48 48" aria-hidden="true" class="ai-ic"><defs><linearGradient id="aig3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b9ac0"/><stop offset=".5" stop-color="#a28fbc"/><stop offset="1" stop-color="#c08d9c"/></linearGradient></defs><circle cx="24" cy="24" r="23" fill="url(#aig3)"/><path d="M24 11c1.2 6.6 4.4 9.8 11 11-6.6 1.2-9.8 4.4-11 11-1.2-6.6-4.4-9.8-11-11 6.6-1.2 9.8-4.4 11-11z" fill="#fff"/><circle cx="34.5" cy="13.5" r="2.4" fill="#fff" opacity=".85"/></svg><div><strong id="aiTit">Nina · Murinoi</strong><small>Agente de IA · responde na hora</small></div><button class="ai-x" id="aiX" type="button" aria-label="Fechar conversa">×</button></header>
   <div class="ai-msgs" id="aiMsgs" aria-live="polite"></div>
   <div class="ai-sug" id="aiSug"><button type="button">Quero um app</button><button type="button">Automatizar meu negócio</button><button type="button">Preciso de um site</button><button type="button">Tenho só uma ideia</button></div>
-  <form class="ai-f" id="aiF"><textarea id="aiIn" rows="1" maxlength="1200" placeholder="Escreva sua mensagem…" aria-label="Sua mensagem"></textarea><button type="button" class="ai-mic" id="aiMic" aria-label="Falar (ditar mensagem)" title="Falar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><button type="submit" id="aiGo" aria-label="Enviar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>
+  <form class="ai-f" id="aiF"><textarea id="aiIn" rows="1" maxlength="1200" placeholder="Escreva sua mensagem…" aria-label="Sua mensagem"></textarea><button type="button" class="ai-mic" id="aiMic" aria-label="Segure para falar" title="Segure para falar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><button type="submit" id="aiGo" aria-label="Enviar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>
   <p class="ai-nota">Conversa atendida por IA. Veja a <a href="privacidade.html">privacidade</a>.</p>
 </section>
 <script>
@@ -860,31 +862,85 @@ function aiVozBotao(el, txt) {
   };
   el.classList.add('voz'); el.appendChild(b);
 }
-/* falar em vez de digitar (reconhecimento de voz do navegador, em português) */
+/* segure para falar: aperta o microfone, fala, solta — o texto aparece pronto na caixa (Enter ou botão para enviar) */
 const AiSR = window.SpeechRecognition || window.webkitSpeechRecognition, aiMic = $('#aiMic');
 let aiPararMic = () => {};
 if (!AiSR) aiMic.hidden = true;
 else {
-  let rec = null, ouvindo = false;
-  aiPararMic = () => { if (!ouvindo) return; ouvindo = false; aiMic.classList.remove('on'); aiIn.classList.remove('ouvindo'); aiIn.placeholder = 'Escreva sua mensagem…'; aiMic.setAttribute('aria-label', 'Falar (ditar mensagem)'); try { rec.stop(); } catch (_) {} };
-  aiMic.addEventListener('click', () => {
-    if (ouvindo) return aiPararMic();
-    aiPararVoz();
-    const base = aiIn.value.trim() ? aiIn.value.trim() + ' ' : '';
-    let fixo = '';
+  const PH = 'Escreva sua mensagem…';
+  const PERG = /^(como|qual|quais|quanto|quanta|quantos|quantas|quando|onde|aonde|por ?que|porque|o que|que|quem|cadê|será|vocês?|tem|têm|dá|pode|podem|posso|consigo|existe|é possível|tudo bem|tudo bom|beleza|alguém|não tem|não dá|não pode)(?=[\s,?!.]|$)/i;
+  /* deixa o ditado com cara de texto escrito: espaços, maiúscula, pontuação final */
+  const SAUD = /^((?:oi|olá|ola|opa|e aí|bom dia|boa tarde|boa noite)(?:,? nina)?)(?:[,!.]?\s+|$)/i;
+  const NOMES = {nina: 'Nina', murinoi: 'Murinoi', whatsapp: 'WhatsApp', instagram: 'Instagram', google: 'Google', pix: 'Pix'};
+  const aiArrumar = t => {
+    t = t.replace(/\s+/g, ' ').replace(/\s+([,.!?;:])/g, '$1').trim();
+    if (!t) return '';
+    t = t.replace(/\p{L}+/gu, w => NOMES[w.toLowerCase()] || w);
+    let ini = '';
+    const s = t.match(SAUD);
+    if (s && !/[.!?]$/.test(s[1])) { ini = s[1].replace(/,? Nina$/, ', Nina'); t = t.slice(s[0].length); }
+    if (t && !/[.!?…]$/.test(t)) t += PERG.test(t) ? '?' : '.';
+    t = ini ? (t ? ini + ', ' + t : ini + '!') : t;
+    return t.replace(/(^|[.!?]\s+)(\p{Ll})/gu, (m, a, b) => a + b.toUpperCase());
+  };
+  let rec = null, segurando = false, iniciou = false, base = '', fixo = '', prov = '', tSolta = 0, tIni = 0, tDica = 0;
+  const visual = estado => {
+    aiMic.classList.toggle('on', estado === 'ouvindo'); aiMic.classList.toggle('trans', estado === 'transcrevendo');
+    aiIn.classList.toggle('ouvindo', estado !== 'parado');
+    aiIn.placeholder = estado === 'ouvindo' ? 'Ouvindo… solte para terminar' : estado === 'transcrevendo' ? 'Transcrevendo…' : PH;
+  };
+  const mostrar = () => { const t = (fixo + ' ' + prov).replace(/\s+/g, ' ').trim(); aiIn.value = (base + t).trimStart(); aiIn.dispatchEvent(new Event('input')); };
+  /* encerra: junta o que foi dito, arruma e deixa na caixa pronto para enviar */
+  const finalizar = () => {
+    clearTimeout(tSolta); if (!rec) return;
+    const r = rec; rec = null; r.onresult = r.onend = r.onerror = null; try { r.abort(); } catch (_) {}
+    const dito = aiArrumar((fixo + ' ' + prov).trim());
+    aiIn.value = (base + dito).trim(); aiIn.dispatchEvent(new Event('input'));
+    visual('parado'); aiMic.setAttribute('aria-label', 'Segure para falar');
+    if (dito && matchMedia('(hover:hover)').matches) { aiIn.focus({preventScroll: true}); aiIn.setSelectionRange(aiIn.value.length, aiIn.value.length); }
+  };
+  aiPararMic = finalizar;
+  const comecar = e => {
+    if (e.button > 0 || rec || aiOcupada) return;
+    e.preventDefault(); aiPararVoz();
+    try { aiMic.setPointerCapture(e.pointerId); } catch (_) {}
+    clearTimeout(tDica); segurando = true; iniciou = false; tIni = Date.now(); fixo = prov = '';
+    base = aiIn.value.trim() ? aiIn.value.trim() + ' ' : '';
     rec = new AiSR(); rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
-    rec.onresult = e => {
-      let prov = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) { const r = e.results[i]; if (r.isFinal) fixo += (fixo && !/\s$/.test(fixo) ? ' ' : '') + r[0].transcript.trim(); else prov += r[0].transcript; }
-      let t = (base + fixo + (prov ? ' ' + prov.trim() : '')).replace(/\s+/g, ' ').trimStart();
-      aiIn.value = t.charAt(0).toUpperCase() + t.slice(1);
-      aiIn.dispatchEvent(new Event('input'));
+    rec.onstart = () => { iniciou = true; if (!segurando) encerrar(true); };
+    rec.onresult = ev => {
+      prov = '';
+      for (let i = ev.resultIndex; i < ev.results.length; i++) { const r = ev.results[i]; if (r.isFinal) fixo += ' ' + r[0].transcript.trim(); else prov += r[0].transcript; }
+      mostrar();
     };
-    rec.onerror = e => { if (/not-allowed|service-not-allowed|audio-capture/.test(e.error)) { aiPararMic(); aiBolha('Para falar comigo por voz, permita o uso do microfone no navegador.', 'bot'); } };
-    rec.onend = () => { if (ouvindo) { try { rec.start(); } catch (_) { aiPararMic(); } } };
-    ouvindo = true; aiMic.classList.add('on'); aiIn.classList.add('ouvindo'); aiIn.placeholder = 'Pode falar, estou ouvindo…'; aiMic.setAttribute('aria-label', 'Parar de ouvir');
-    try { rec.start(); } catch (_) { aiPararMic(); }
-  });
+    rec.onerror = ev => {
+      if (/not-allowed|service-not-allowed|audio-capture/.test(ev.error)) { segurando = false; finalizar(); aiBolha('Para falar comigo por voz, permita o uso do microfone no navegador.', 'bot'); }
+    };
+    /* alguns celulares encerram sozinhos no meio da fala: enquanto o dedo estiver no botão, continua ouvindo */
+    rec.onend = () => { if (segurando && rec) { try { rec.start(); } catch (_) { finalizar(); } } else finalizar(); };
+    visual('ouvindo'); aiMic.setAttribute('aria-label', 'Ouvindo — solte para terminar');
+    try { rec.start(); } catch (_) { finalizar(); }
+  };
+  const soltar = () => {
+    if (!rec || !segurando) return;
+    segurando = false;
+    if (iniciou) encerrar(); /* se ainda está pedindo permissão do microfone, encerra assim que começar */
+  };
+  const dica = () => { finalizar(); aiIn.placeholder = 'Segure o microfone enquanto fala'; clearTimeout(tDica); tDica = setTimeout(() => { if (!rec) aiIn.placeholder = PH; }, 2500); };
+  const encerrar = depoisDaPermissao => {
+    if (!rec) return;
+    if (!(fixo + prov).trim() && (depoisDaPermissao === true || Date.now() - tIni < 350)) return dica();
+    visual('transcrevendo');
+    try { rec.stop(); } catch (_) { finalizar(); }   /* stop() entrega o trecho final antes de onend */
+    tSolta = setTimeout(finalizar, 2500);
+  };
+  aiMic.addEventListener('pointerdown', comecar);
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => aiMic.addEventListener(n, soltar));
+  aiMic.addEventListener('contextmenu', e => e.preventDefault());
+  aiMic.addEventListener('click', e => e.preventDefault());
+  /* teclado: segurar Espaço com o botão em foco também funciona */
+  aiMic.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); comecar({button: 0, preventDefault() {}, pointerId: 0}); } });
+  aiMic.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); soltar(); } });
 }
 const aiConcluir = (resumo, atendente) => {
   if (aiMsgs.querySelector('.ai-done.ok:not(.velho)')) return;
