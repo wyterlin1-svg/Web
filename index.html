@@ -447,6 +447,8 @@ h2{font-size:clamp(1.9rem,min(4.4vw,6.6vh),3.8rem)}
 .ai-sug[hidden]{display:none}
 .ai-sug button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font:400 .8125rem var(--sans);color:var(--fg);cursor:pointer;transition:border-color .2s,background .2s}
 .ai-sug button:hover{border-color:#a28fbc;background:#faf7fb}
+.ai-sep{align-self:stretch;display:flex;align-items:center;gap:10px;margin:6px 0;font:400 .6875rem var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.ai-sep::before,.ai-sep::after{content:"";flex:1;height:1px;background:var(--line)}
 .ai-done{align-self:stretch;border:1px solid #d8cfe0;background:#fff;border-radius:18px;padding:14px 16px;font-size:.875rem;color:var(--body);display:grid;gap:10px;animation:aiIn .35s}
 .ai-done strong{color:var(--fg);font-weight:500}
 .ai-done .btn{justify-self:start;padding:10px 18px;font-size:.875rem}
@@ -788,13 +790,33 @@ $('#f').addEventListener('submit', e => {
 const AGENTE_URL = 'https://murinoi.app.n8n.cloud/webhook/murinoi-site-agente';
 const aiBox = $('#aiBox'), aiMsgs = $('#aiMsgs'), aiIn = $('#aiIn'), aiGo = $('#aiGo'), aiSug = $('#aiSug');
 const aiMem = (() => { try { return JSON.parse(sessionStorage.getItem('nina') || 'null'); } catch (_) { return null; } })() || {id: '', log: [], pronto: false};
-if (!aiMem.id) aiMem.id = 'web-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+const aiNovoId = () => 'web-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+if (!aiMem.id) aiMem.id = aiNovoId();
 const aiSalvar = () => { try { sessionStorage.setItem('nina', JSON.stringify(aiMem)); } catch (_) {} };
 let aiOcupada = false, aiLead = false;
+/* depois que a Nina fecha o atendimento: 3 minutos sem resposta encerram; a próxima mensagem abre um novo */
+const AI_ESPERA = 3 * 60 * 1000;
+let aiTimer = 0;
+const aiSep = txt => { const s = document.createElement('div'); s.className = 'ai-sep'; s.textContent = txt; aiMsgs.appendChild(s); aiMsgs.scrollTop = aiMsgs.scrollHeight; };
+const AI_FIM = 'Como não recebi mais mensagens, encerrei este atendimento. Obrigada pela conversa! Se precisar de algo, é só escrever aqui que eu começo um novo atendimento.';
+const aiEncerrar = () => {
+  if (aiMem.encerrado) return;
+  aiMem.encerrado = true; aiMem.fim = 0; aiMem.log.push(['bot', AI_FIM]); aiSalvar();
+  if (aiMsgs.children.length) { aiBolha(AI_FIM, 'bot'); aiSep('Atendimento encerrado'); }
+};
+const aiAgendar = () => {
+  clearTimeout(aiTimer);
+  if (aiMem.pronto && !aiMem.encerrado && aiMem.fim) aiTimer = setTimeout(aiEncerrar, Math.max(0, aiMem.fim - Date.now()));
+};
+const aiNovo = () => {
+  Object.assign(aiMem, {id: aiNovoId(), log: [], pronto: false, resumo: '', encerrado: false, fim: 0});
+  aiLead = false; aiMsgs.querySelectorAll('.ai-done').forEach(c => c.classList.add('velho'));
+  aiSep('Novo atendimento'); aiSalvar();
+};
 const aiBolha = (txt, quem) => { const el = document.createElement('div'); el.className = 'ai-m ' + quem; el.textContent = txt; aiMsgs.appendChild(el); aiMsgs.scrollTop = aiMsgs.scrollHeight; return el; };
 const aiConcluir = resumo => {
-  if (aiMsgs.querySelector('.ai-done')) return;
-  const c = document.createElement('div'); c.className = 'ai-done';
+  if (aiMsgs.querySelector('.ai-done.ok:not(.velho)')) return;
+  const c = document.createElement('div'); c.className = 'ai-done ok';
   c.innerHTML = '<strong>✓ Pronto! A equipe da Murinoi já recebeu o seu pedido.</strong><span>Quer agilizar? Envie o resumo pelo WhatsApp.</span><button class="btn" type="button">Enviar resumo no WhatsApp</button>';
   c.querySelector('button').onclick = () => openWa('Olá, Murinoi! Vim pelo site e conversei com a Nina.\n\n' + (resumo || ''));
   aiMsgs.appendChild(c); aiMsgs.scrollTop = aiMsgs.scrollHeight;
@@ -809,6 +831,8 @@ const aiFalha = () => {
 };
 const aiEnviar = async txt => {
   txt = (txt || '').trim(); if (!txt || aiOcupada) return;
+  clearTimeout(aiTimer);
+  if (aiMem.encerrado) aiNovo();
   aiOcupada = true; aiGo.disabled = true; aiSug.hidden = true;
   aiBolha(txt, 'eu'); aiMem.log.push(['eu', txt]); aiSalvar();
   aiIn.value = ''; aiIn.style.height = '';
@@ -827,12 +851,18 @@ const aiEnviar = async txt => {
     if (d.pronto) { aiMem.pronto = true; aiMem.resumo = d.resumo; aiConcluir(d.resumo); }
     aiSalvar();
   } catch (_) { dig.remove(); aiFalha(); }
+  if (aiMem.pronto) { aiMem.fim = Date.now() + AI_ESPERA; aiSalvar(); aiAgendar(); }
   aiOcupada = false; aiGo.disabled = !aiIn.value.trim(); aiMsgs.scrollTop = aiMsgs.scrollHeight;
 };
 const aiAbrir = primeira => {
   document.documentElement.classList.add('ai-open'); aiBox.setAttribute('aria-hidden', 'false');
   if (!aiMsgs.children.length) {
-    if (aiMem.log.length) { aiMem.log.forEach(([q, t]) => aiBolha(t, q)); aiSug.hidden = true; if (aiMem.pronto) aiConcluir(aiMem.resumo); }
+    if (aiMem.log.length) {
+      const fim = aiMem.encerrado ? aiMem.log[aiMem.log.length - 1] : null;
+      (fim ? aiMem.log.slice(0, -1) : aiMem.log).forEach(([q, t]) => aiBolha(t, q)); aiSug.hidden = true;
+      if (aiMem.pronto) aiConcluir(aiMem.resumo);
+      if (fim) { aiBolha(fim[1], fim[0]); aiSep('Atendimento encerrado'); }
+    }
     else aiBolha('Olá! Eu sou a Nina, agente de IA da Murinoi. Me conta: o que mais toma o seu tempo ou o seu dinheiro hoje?', 'bot');
   }
   setTimeout(() => aiIn.focus({preventScroll: true}), 250);
@@ -847,6 +877,7 @@ aiIn.addEventListener('input', () => { aiGo.disabled = aiOcupada || !aiIn.value.
 aiIn.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aiEnviar(aiIn.value); } });
 aiSug.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') aiEnviar(e.target.textContent); });
 setTimeout(() => $('#aiFab').classList.add('quiet'), 14000);
+aiAgendar();
 /* e-mail: o endereço é montado aqui para não ser colhido por robôs de spam */
 const EMAIL = ['contato', 'murinoi.com'].join('@');
 $('#em').textContent = EMAIL;
