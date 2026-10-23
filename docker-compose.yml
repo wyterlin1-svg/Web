@@ -131,9 +131,24 @@ services:
               -e POSTGRES_USER=evo -e "POSTGRES_PASSWORD=$$PW" -e POSTGRES_DB=evolution \
               -v murinoi_evo_db:/var/lib/postgresql/data postgres:16-alpine >/dev/null
           fi
+          # só a rota de envio de mensagem fica pública (atrás do Traefik, protegida pela chave)
+          set -- --label murinoi.versao=2
+          if [ -n "$${T:-}" ]; then
+            B='`'
+            set -- "$$@" --label traefik.enable=true \
+              --label "traefik.http.routers.murinoi-wa.rule=Host($${B}murinoi.com$${B}) && PathPrefix($${B}/wa-api/message/sendText/$${B})" \
+              --label "traefik.http.routers.murinoi-wa.entrypoints=$$ep" \
+              --label traefik.http.routers.murinoi-wa.tls=true \
+              --label "traefik.http.routers.murinoi-wa.tls.certresolver=$$cr" \
+              --label traefik.http.routers.murinoi-wa.middlewares=murinoi-wa-strip \
+              --label traefik.http.middlewares.murinoi-wa-strip.stripprefix.prefixes=/wa-api \
+              --label traefik.http.services.murinoi-wa.loadbalancer.server.port=8080
+            if [ -n "$${rede:-}" ] && [ "$$rede" != host ]; then set -- "$$@" --label "traefik.docker.network=$$rede"; else set -- "$$@" --label "traefik.docker.network=$$EVO"; fi
+          fi
+          [ "$$(docker inspect -f '{{index .Config.Labels "murinoi.versao"}}' $$EVO 2>/dev/null)" = 2 ] || docker rm -f $$EVO >/dev/null 2>&1 || true
           if ! rodando $$EVO; then
             docker rm -f $$EVO >/dev/null 2>&1 || true
-            docker run -d --name $$EVO --restart unless-stopped --network $$EVO \
+            docker run -d --name $$EVO --restart unless-stopped --network $$EVO "$$@" \
               -v murinoi_evo_inst:/evolution/instances \
               -e SERVER_URL=$$EVO_URL -e "AUTHENTICATION_API_KEY=$$KEY" -e AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=false \
               -e DATABASE_PROVIDER=postgresql -e DATABASE_CONNECTION_CLIENT_NAME=murinoi \
@@ -143,6 +158,7 @@ services:
               -e N8N_ENABLED=true -e DEL_INSTANCE=false -e LANGUAGE=pt-BR -e LOG_LEVEL=ERROR,WARN \
               -e CONFIG_SESSION_PHONE_CLIENT=Murinoi -e CONFIG_SESSION_PHONE_NAME=Chrome \
               $$EVO_IMG >/dev/null
+            [ -n "$${rede:-}" ] && [ "$$rede" != host ] && docker network connect "$$rede" $$EVO >/dev/null 2>&1 || true
           fi
           i=0; until api GET / | grep -q . ; do i=$$((i+1)); [ $$i -gt 60 ] && { echo "aviso: a Evolution API não respondeu"; return 1; }; sleep 3; done
           api GET "/instance/fetchInstances?instanceName=murinoi" | grep -q '"murinoi"' || \
@@ -155,7 +171,11 @@ services:
           id=$$(echo "$$atual" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p' | head -n1)
           if [ -z "$$id" ]; then api POST /n8n/create/murinoi "$$bot" >/dev/null; echo "chatbot criado"
           else api PUT "/n8n/update/$$id/murinoi" "$$bot" >/dev/null; echo "chatbot atualizado"; fi
-          echo "Evolution API no ar (rede interna, sem porta aberta)"
+          echo "Evolution API no ar (só o envio de mensagens fica em https://murinoi.com/wa-api, protegido por chave)"
+          echo "=============================================="
+          echo " AVISO NO WHATSAPP: no n8n, crie a credencial 'Evolution Murinoi'"
+          echo " (tipo Header Auth)  Nome: apikey   Valor: $$KEY"
+          echo "=============================================="
         }
 
         # número decodificado do site na hora, sem ficar escrito em lugar nenhum

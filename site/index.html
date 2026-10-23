@@ -815,7 +815,7 @@ const aiEnviar = async txt => {
   const dig = aiBolha('', 'bot'); dig.innerHTML = '<span class="ai-dots" aria-label="Nina está digitando"><i></i><i></i><i></i></span>';
   const pedir = async () => {
     const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 45000);
-    const r = await fetch(AGENTE_URL, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({sessionId: aiMem.id, message: txt.slice(0, 1200), page: location.href.split('#')[0]}), signal: ctl.signal});
+    const r = await fetch(AGENTE_URL, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({sessionId: aiMem.id, message: txt.slice(0, 1200), page: location.href.split('#')[0], historico: aiMem.log.slice(-40).map(([q, t]) => ({q, t: String(t).slice(0, 1500)}))}), signal: ctl.signal});
     clearTimeout(t);
     const d = await r.json();
     if (!r.ok || !d.resposta) throw 0;
