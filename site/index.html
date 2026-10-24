@@ -459,6 +459,8 @@ h2{font-size:clamp(1.9rem,min(4.4vw,6.6vh),3.8rem)}
 .ai-ouvir:hover{transform:scale(1.08);color:var(--fg)}
 .ai-ouvir[data-estado=tocando]{background:var(--fg);color:#fff;border-color:var(--fg)}
 .ai-ouvir svg{width:13px;height:13px}
+.ai-ouvir.carregando::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid transparent;border-top-color:#a28fbc;animation:aiGira .8s linear infinite}
+@keyframes aiGira{to{transform:rotate(360deg)}}
 .ai-f .ai-mic[hidden]{display:none}
 .ai-f .ai-mic{background:transparent;color:#8a7aa6;border:1px solid #ddd3e3;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 .ai-f .ai-mic.on.on{transform:scale(1.12)}
@@ -843,6 +845,18 @@ const aiVozUrl = t => '/voz?t=' + encodeURIComponent(t);
 /* plano B da voz realista: Gemini TTS pelo n8n (voz feminina), com cache por frase */
 const AI_VOZ2 = 'https://murinoi.app.n8n.cloud/webhook/murinoi-nina-voz', aiVoz2 = new Map();
 let aiFonte = 'site';
+/* a voz de cada resposta é preparada em segundo plano assim que ela aparece: no play, o áudio já está no aparelho */
+const aiPronta = new Map();
+const aiBaixarVoz = t => {
+  const pedir = () => fetch(aiVozUrl(t)).then(r => { if (!r.ok || !/audio/.test(r.headers.get('content-type') || '')) throw 0; return r.blob(); });
+  if (!aiPronta.has(t)) aiPronta.set(t, pedir().catch(() => new Promise(ok => setTimeout(ok, 700)).then(pedir))   /* uma nova tentativa se o serviço oscilar */
+    .then(b => URL.createObjectURL(b)).catch(e => { aiPronta.delete(t); throw e; }));
+  return aiPronta.get(t);
+};
+const aiPreparar = txt => {
+  if (!aiReal || aiFonte !== 'site' || (navigator.connection && navigator.connection.saveData)) return;
+  aiPartes(txt).forEach(t => aiBaixarVoz(t).catch(() => {}));   /* todas as frases ao mesmo tempo */
+};
 const aiGemini = t => {
   if (!aiVoz2.has(t)) aiVoz2.set(t, fetch(AI_VOZ2, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({texto: t})})
     .then(r => { if (!r.ok || !/audio/.test(r.headers.get('content-type') || '')) throw 0; return r.blob(); })
@@ -858,7 +872,7 @@ const aiEscolherVoz = () => {
 if (tts) { aiEscolherVoz(); tts.addEventListener && tts.addEventListener('voiceschanged', aiEscolherVoz); }
 /* frases agrupadas em blocos de até ~300 letras: menos pedidos e entonação contínua */
 const aiPartes = t => (t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').replace(/ ([,.!?;:])/g, '$1').match(/[^.!?…]+[.!?…]*/g) || []).map(x => x.trim()).filter(Boolean)
-  .flatMap(x => x.match(/.{1,300}(\s|$)/g) || [x]).reduce((a, x) => { const u = a.length - 1; if (u >= 0 && (a[u] + ' ' + x).length <= 300) a[u] += ' ' + x.trim(); else a.push(x.trim()); return a; }, []);
+  .flatMap(x => x.match(/.{1,300}(\s|$)/g) || [x]).reduce((a, x) => { const u = a.length - 1; if (u >= 1 && (a[u] + ' ' + x).length <= 300) a[u] += ' ' + x.trim(); else a.push(x.trim()); return a; }, []);
 const aiIcone = (b, estado) => { b.dataset.estado = estado; b.innerHTML = estado === 'tocando' ? AI_PAUSE : AI_PLAY; b.setAttribute('aria-label', estado === 'tocando' ? 'Pausar leitura' : estado === 'pausado' ? 'Continuar leitura' : 'Ouvir resposta'); };
 const aiCalar = () => { if (aiAudio) { aiAudio.onended = aiAudio.onerror = null; aiAudio.pause(); } if (tts) tts.cancel(); };
 const aiPararVoz = () => { const f = aiFalando; if (!f) return; aiFalando = null; aiCalar(); aiIcone(f.btn, 'parado'); };
@@ -875,7 +889,13 @@ const aiFalarParte = () => {
       aiAudio.play().catch(e => { if (e.name === 'NotAllowedError' && aiFalando === f) { f.pausado = true; aiIcone(f.btn, 'pausado'); } });
     };
     const prox = f.partes[f.i + 1];
-    if (aiFonte === 'site') { tocar(aiVozUrl(f.partes[f.i])); if (prox) fetch(aiVozUrl(prox)).catch(() => {}); return; }
+    if (aiFonte === 'site') {
+      const t = f.partes[f.i];
+      if (aiPronta.has(t)) { f.btn.classList.add('carregando'); aiPronta.get(t).then(tocar, () => tocar(aiVozUrl(t))).finally(() => f.btn.classList.remove('carregando')); }   /* já baixada ou chegando: toca na hora */
+      else tocar(aiVozUrl(t));
+      if (prox) aiBaixarVoz(prox).catch(() => {});
+      return;
+    }
     aiGemini(f.partes[f.i]).then(tocar, () => { if (aiFalando !== f) return; aiReal = false; aiFalarParte(); });
     if (prox) aiGemini(prox).catch(() => {});   /* já prepara o próximo bloco */
     return;
@@ -888,6 +908,7 @@ const aiFalarParte = () => {
 function aiVozBotao(el, txt) {
   if (!tts && !aiAudio) return;
   const b = document.createElement('button'); b.type = 'button'; b.className = 'ai-ouvir'; aiIcone(b, 'parado');
+  aiPreparar(txt);
   b.onclick = () => {
     const f = aiFalando;
     if (f && f.btn === b) {
@@ -897,7 +918,7 @@ function aiVozBotao(el, txt) {
     }
     aiPararVoz(); aiPararMic();
     aiFalando = {btn: b, partes: aiPartes(txt), i: 0, pausado: false}; aiIcone(b, 'tocando'); aiCalar();
-    if (aiReal && aiFonte !== 'site') { aiAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='; aiAudio.play().catch(() => {}); }   /* libera o áudio no iPhone enquanto a voz é gerada */
+    if (aiReal) { aiAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='; aiAudio.play().catch(() => {}); }   /* libera o áudio no iPhone enquanto a voz é gerada */
     aiFalarParte();
   };
   el.classList.add('voz'); el.appendChild(b);
