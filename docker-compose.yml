@@ -52,6 +52,8 @@ services:
         $$SITE_ADDR {
           root * /srv/site
           encode zstd gzip
+          @fontes path /fonts/*
+          header @fontes Cache-Control "public, max-age=31536000, immutable"
           @estaticos path *.js *.css *.png *.jpg *.svg *.ico *.webmanifest
           header @estaticos Cache-Control "public, max-age=86400"
           @paginas path / *.html */
