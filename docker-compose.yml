@@ -4,7 +4,7 @@
 #  - Portas livres -> o site usa 80/443 direto e o Caddy emite o HTTPS.
 #  - Porta 80 ocupada por outro programa -> o site sobe na porta 8080 (veja o log).
 # O site é baixado do GitHub (ramo "hostinger") e se atualiza a cada 10 minutos.
-# Voz da Nina: vozes neurais de mulher (pt-BR) servidas em /voz, de graça e com cache.
+# Voz da Nina: a sua voz clonada (Chatterbox, na VPS) ou, sem ela, vozes neurais de mulher (pt-BR), em /voz, de graça e com cache.
 # Chatbot do WhatsApp: Evolution API (só na rede interna) + n8n com IA. O código de conexão aparece no log.
 # Antes: registros A de murinoi.com e www no DNS apontando para o IP da VPS.
 services:
@@ -21,6 +21,8 @@ services:
       BOT_GATILHO: "pelo site"
       # voz da Nina no site (pt-BR-ThalitaMultilingualNeural ou pt-BR-FranciscaNeural)
       VOZ_NOME: "pt-BR-ThalitaMultilingualNeural"
+      # voz clonada (a sua voz, gravada em murinoi.com/voz/gravar; o código aparece no log)
+      VOZ_CLONADA: "sim"
       NUM_FONTE: "https://raw.githubusercontent.com/wyterlin1-svg/Web/hostinger/index.html"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -58,6 +60,9 @@ services:
           header @estaticos Cache-Control "public, max-age=86400"
           @paginas path / *.html */
           header @paginas Cache-Control "no-cache"
+          handle /voz/gravar* {
+            reverse_proxy murinoi-clone:8090
+          }
           handle /voz {
             reverse_proxy murinoi-voz:8080
           }
@@ -129,11 +134,28 @@ services:
         cat > /tmp/voz.py <<'PY'
         import asyncio, hashlib, os, re, time
         from aiohttp import web
-        import edge_tts
+        import aiohttp, edge_tts
         VOZ = os.environ.get('VOZ_NOME', 'pt-BR-ThalitaMultilingualNeural')
         CACHE = '/cache'; os.makedirs(CACHE, exist_ok=True)
         ORIGENS = re.compile(r'^https://(www\.)?murinoi\.com(/|$$)|^http://(localhost|127\.0\.0\.1)(:\d+)?(/|$$)')
         vistos = {}
+        CLONE = 'http://murinoi-clone:8090'; _ver = [None, 0.0]
+        async def versao_clone():
+            if time.time() - _ver[1] < 20: return _ver[0]
+            v = None
+            try:
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=2)) as s:
+                    async with s.get(CLONE + '/versao') as r:
+                        if r.status == 200: v = (await r.text()).strip() or None
+            except Exception: pass
+            _ver[0], _ver[1] = v, time.time(); return v
+        async def clonar(t):
+            try:
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=240)) as s:
+                    async with s.get(CLONE + '/sintetizar', params={'t': t}) as r:
+                        if r.status == 200: return await r.read()
+            except Exception: pass
+            return None
         async def falar(req):
             t = re.sub(r'\s+', ' ', req.query.get('t', '')).strip()
             if not t or len(t) > 400: raise web.HTTPBadRequest()
@@ -143,8 +165,18 @@ services:
             if len(h) >= 40: raise web.HTTPTooManyRequests()
             vistos[ip] = h + [agora]
             if len(vistos) > 5000: vistos.clear()
+            v = await versao_clone()   # com a sua voz gravada, ela tem prioridade; se falhar, segue a Thalita
+            if v:
+                arq = os.path.join(CACHE, hashlib.sha1(('clone' + v + t).encode()).hexdigest() + '.wav')
+                cw = {'Content-Type': 'audio/wav', 'Cache-Control': 'public, max-age=86400'}
+                if os.path.exists(arq): return web.FileResponse(arq, headers=cw)
+                dados = await clonar(t)
+                if dados:
+                    with open(arq + '.tmp', 'wb') as f: f.write(dados)
+                    os.replace(arq + '.tmp', arq)
+                    return web.Response(body=dados, headers=cw)
             arq = os.path.join(CACHE, hashlib.sha1((VOZ + t).encode()).hexdigest() + '.mp3')
-            cab = {'Content-Type': 'audio/mpeg', 'Cache-Control': 'public, max-age=2592000'}
+            cab = {'Content-Type': 'audio/mpeg', 'Cache-Control': 'public, max-age=86400'}
             if os.path.exists(arq): return web.FileResponse(arq, headers=cab)
             r = web.StreamResponse(headers=cab); partes = []
             try:
@@ -175,6 +207,138 @@ services:
               python:3.12-alpine sh -c 'pip install -q --no-cache-dir edge-tts && exec python -c "$$VOZ_PY"' >/dev/null && echo "voz da Nina no ar ($$VOZ_NOME)"
           fi
           docker network connect murinoi-int $$NOME >/dev/null 2>&1 || true
+        }
+
+        # ---------- voz clonada da Nina (Chatterbox, roda na VPS, sem mensalidade) ----------
+        cat > /tmp/clone.Dockerfile <<'DF'
+        FROM python:3.11-slim
+        RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg git && rm -rf /var/lib/apt/lists/*
+        RUN pip install --no-cache-dir torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+        RUN pip install --no-cache-dir chatterbox-tts==0.1.7 aiohttp
+        DF
+        cat > /tmp/gravar.html <<'HTML'
+        <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Gravar a voz da Nina</title>
+        <style>body{margin:0;background:#f7f3ee;color:#2e2b33;font:17px/1.6 system-ui,-apple-system,sans-serif}main{max-width:620px;margin:0 auto;padding:32px 16px}h1{font-family:Georgia,serif;font-weight:400;font-size:2rem;margin:0 0 8px}p,li{color:#5b5662}.cartao{background:#fffdfa;border:1px solid #e4ddd6;border-radius:18px;padding:20px;margin:18px 0}.texto{font-size:1.15rem;color:#2e2b33;line-height:1.7}button{font:500 1rem system-ui;border:0;border-radius:999px;padding:14px 26px;cursor:pointer;background:#2e2b33;color:#fff;margin:6px 8px 6px 0}button.sec{background:#fff;color:#2e2b33;border:1px solid #d9cfd6}button:disabled{opacity:.4}#tempo{font-variant-numeric:tabular-nums;color:#a7798a;font-weight:600}#status{margin-top:12px;font-weight:500}audio{width:100%;margin-top:12px}.rec{background:#b98393!important}</style></head><body><main>
+        <h1>Gravar a voz da Nina</h1>
+        <p>A Nina vai falar com a sua voz. Grave de 15 a 25 segundos lendo o texto abaixo.</p>
+        <ul><li>Lugar silencioso, sem TV, ventilador ou eco.</li><li>Celular a um palmo da boca.</li><li>Fale do seu jeito natural, calmo e simpático, como falaria com um cliente.</li></ul>
+        <div class="cartao texto">Olá! Eu sou a Nina, da Murinoi. Aqui a gente transforma ideias em soluções que economizam tempo e dinheiro: aplicativos, sistemas, sites e automações com inteligência artificial. Me conta o que mais toma o seu tempo hoje, que eu te mostro como resolver. Vamos começar?</div>
+        <div class="cartao"><button id="gravar">● Gravar</button><span id="tempo">0:00</span>
+        <audio id="ouvir" controls hidden></audio>
+        <div><button id="enviar" disabled>Usar esta gravação</button><button id="refazer" class="sec" hidden>Gravar de novo</button></div>
+        <div id="status"></div></div>
+        <p style="font-size:.85rem">Grave somente a sua própria voz. Ao enviar, você autoriza o uso dela como voz da Nina no site murinoi.com. Você pode trocar a gravação quando quiser, voltando a esta página.</p>
+        </main><script>
+        var rec = null, partes = [], blob = null, ini = 0, tick = 0, bG = document.getElementById('gravar'), bE = document.getElementById('enviar'), bR = document.getElementById('refazer'), au = document.getElementById('ouvir'), st = document.getElementById('status'), tp = document.getElementById('tempo');
+        function parar() { if (rec && rec.state !== 'inactive') rec.stop(); clearInterval(tick); bG.textContent = '● Gravar'; bG.classList.remove('rec'); }
+        bG.onclick = function () {
+          if (rec && rec.state === 'recording') return parar();
+          navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: true, autoGainControl: true}}).then(function (s) {
+            partes = []; rec = new MediaRecorder(s);
+            rec.ondataavailable = function (e) { if (e.data.size) partes.push(e.data); };
+            rec.onstop = function () { s.getTracks().forEach(function (t) { t.stop(); }); blob = new Blob(partes, {type: rec.mimeType || 'audio/webm'}); au.src = URL.createObjectURL(blob); au.hidden = false; bE.disabled = false; bR.hidden = false; st.textContent = 'Ouça a gravação. Se ficou boa, toque em "Usar esta gravação".'; };
+            rec.start(); ini = Date.now(); bG.textContent = '■ Parar'; bG.classList.add('rec'); st.textContent = 'Gravando… leia o texto com calma.';
+            tick = setInterval(function () { var s2 = Math.floor((Date.now() - ini) / 1000); tp.textContent = Math.floor(s2 / 60) + ':' + String(s2 % 60).padStart(2, '0'); if (s2 >= 40) parar(); }, 250);
+          }).catch(function () { st.textContent = 'Não consegui acessar o microfone. Permita o microfone para este site e tente de novo.'; });
+        };
+        bR.onclick = function () { blob = null; au.hidden = true; bE.disabled = true; bR.hidden = true; tp.textContent = '0:00'; st.textContent = ''; };
+        bE.onclick = function () {
+          if (!blob) return; bE.disabled = true; st.textContent = 'Enviando e preparando a sua voz… isso pode levar alguns minutos, não feche a página.';
+          fetch(location.href, {method: 'POST', body: blob}).then(function (r) { return r.ok ? r.json() : r.text().then(function (t) { throw t; }); })
+            .then(function () { st.textContent = 'Pronto! A Nina já está falando com a sua voz. 🎉'; })
+            .catch(function (e) { st.textContent = 'Não deu certo: ' + (e || 'tente de novo') + '.'; bE.disabled = false; });
+        };
+        </script></body></html>
+        HTML
+        cat > /tmp/clone.py <<'PY'
+        import asyncio, hashlib, io, os, subprocess, time
+        from aiohttp import web
+        import torch, soundfile as sf
+        from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+        torch.set_num_threads(max(1, os.cpu_count() or 1))
+        COD = os.environ['CODIGO']; REF = '/dados/referencia.wav'
+        est = {'modelo': None, 'versao': None, 'pronto': False}
+        trava = asyncio.Lock(); andamento = {}
+        def log(*a): print(*a, flush=True)
+        def preparar():
+            if est['modelo'] is None:
+                log('voz clonada: carregando o modelo (a primeira vez baixa uns 3 GB)...')
+                est['modelo'] = ChatterboxMultilingualTTS.from_pretrained(device='cpu', t3_model='v3')
+            if os.path.exists(REF):
+                est['modelo'].prepare_conditionals(REF)
+                est['versao'] = hashlib.sha1(open(REF, 'rb').read()).hexdigest()[:12]
+                t0 = time.time(); w = gerar('Olá! Eu sou a Nina, da Murinoi.')
+                log('voz clonada pronta: frase curta gerada em %.1f s' % (time.time() - t0))
+            else:
+                est['versao'] = None; log('voz clonada: aguardando a gravação da sua voz')
+            est['pronto'] = True
+        def gerar(t):
+            w = est['modelo'].generate(t, language_id='pt')
+            b = io.BytesIO(); sf.write(b, w.squeeze(0).cpu().numpy(), est['modelo'].sr, format='WAV', subtype='PCM_16')
+            return b.getvalue()
+        async def versao(req):
+            if not est['pronto'] or not est['versao']: raise web.HTTPNotFound()
+            return web.Response(text=est['versao'])
+        async def sintetizar(req):
+            t = ' '.join(req.query.get('t', '').split())
+            if not t or len(t) > 400: raise web.HTTPBadRequest()
+            if not est['pronto'] or not est['versao']: raise web.HTTPNotFound()
+            if t not in andamento:
+                async def tarefa():
+                    async with trava:
+                        return await asyncio.get_running_loop().run_in_executor(None, gerar, t)
+                andamento[t] = asyncio.ensure_future(tarefa())
+            try: dados = await asyncio.shield(andamento[t])
+            finally:
+                if andamento.get(t) is not None and andamento[t].done(): andamento.pop(t, None)
+            return web.Response(body=dados, content_type='audio/wav')
+        async def pagina(req):
+            if req.query.get('c') != COD: raise web.HTTPForbidden()
+            return web.Response(text=os.environ.get('GRAVAR_HTML', ''), content_type='text/html')
+        async def receber(req):
+            if req.query.get('c') != COD: raise web.HTTPForbidden()
+            corpo = await req.read()
+            if len(corpo) < 2000: raise web.HTTPBadRequest(text='gravação vazia')
+            os.makedirs('/dados', exist_ok=True)
+            with open('/dados/entrada', 'wb') as f: f.write(corpo)
+            r = subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', '/dados/entrada', '-ac', '1', '-ar', '24000',
+                                '-af', 'silenceremove=start_periods=1:start_threshold=-45dB,loudnorm', '-t', '20', '/dados/nova.wav'])
+            if r.returncode != 0: raise web.HTTPBadRequest(text='não consegui ler o áudio')
+            os.replace('/dados/nova.wav', REF)
+            async with trava:
+                await asyncio.get_running_loop().run_in_executor(None, preparar)
+            return web.json_response({'ok': True, 'versao': est['versao']})
+        async def iniciar(app):
+            asyncio.get_running_loop().run_in_executor(None, preparar)
+        app = web.Application(client_max_size=25 * 1024 * 1024)
+        app.router.add_get('/versao', versao); app.router.add_get('/sintetizar', sintetizar)
+        app.router.add_get('/voz/gravar', pagina); app.router.add_post('/voz/gravar', receber)
+        app.on_startup.append(iniciar)
+        web.run_app(app, port=8090, access_log=None)
+        PY
+        clone_subir() {
+          [ "$$VOZ_CLONADA" = sim ] || return 0
+          mem=$$(awk '/MemTotal/{print int($$2/1024)}' /proc/meminfo)
+          if [ "$$mem" -lt 5500 ]; then echo "voz clonada: a VPS tem $${mem} MB de memória e precisa de uns 6 GB; a Nina segue com a voz $$VOZ_NOME"; return 0; fi
+          mkdir -p /segredos; [ -s /segredos/voz_codigo ] || head -c 9 /dev/urandom | od -An -tx1 | tr -d ' \n' > /segredos/voz_codigo
+          COD=$$(cat /segredos/voz_codigo)
+          df=$$(md5sum < /tmp/clone.Dockerfile | cut -c1-12)
+          if [ "$$(docker image inspect -f '{{index .Config.Labels "murinoi.df"}}' murinoi-clone-img 2>/dev/null)" != "$$df" ]; then
+            echo "voz clonada: preparando o programa (a primeira vez leva de 10 a 20 minutos)..."
+            docker build -q --label "murinoi.df=$$df" -t murinoi-clone-img - < /tmp/clone.Dockerfile >/dev/null || { echo "aviso: não consegui preparar a voz clonada"; return 1; }
+          fi
+          ch=$$(cat /tmp/clone.py /tmp/gravar.html | md5sum | cut -c1-12)
+          [ "$$(docker inspect -f '{{index .Config.Labels "murinoi.clone"}}' murinoi-clone 2>/dev/null)" = "$$ch" ] || docker rm -f murinoi-clone >/dev/null 2>&1 || true
+          if ! rodando murinoi-clone; then
+            docker run -d --name murinoi-clone --restart unless-stopped --network murinoi-int --label "murinoi.clone=$$ch" \
+              -e "CODIGO=$$COD" -e "CLONE_PY=$$(cat /tmp/clone.py)" -e "GRAVAR_HTML=$$(cat /tmp/gravar.html)" \
+              -v murinoi_clone_dados:/dados -v murinoi_clone_hf:/root/.cache/huggingface \
+              murinoi-clone-img sh -c 'exec python -c "$$CLONE_PY"' >/dev/null && echo "voz clonada: serviço no ar (acompanhe o log do contêiner murinoi-clone)"
+          fi
+          echo "=============================================="
+          echo " VOZ CLONADA DA NINA: grave a sua voz em"
+          echo " https://murinoi.com/voz/gravar?c=$$COD"
+          echo "=============================================="
         }
 
         api() { curl -s -m 30 -X "$$1" -H "apikey: $$KEY" -H 'Content-Type: application/json' "$$EVO_URL$$2" $${3:+-d "$$3"}; }
@@ -269,13 +433,14 @@ services:
 
         subir
         voz_subir || true
+        clone_subir || true
         evo_subir || true
         # a cada minuto: chatbot conectado? a cada hora: site de pé?
         n=0
         while true; do
           evo_conferir || true
           sleep 60; n=$$((n+1))
-          [ $$((n % 60)) -eq 0 ] && { docker ps --filter name=^/$$NOME$$ --format '{{.Names}}' | grep -q . || { subir; voz_subir || true; }; }
+          [ $$((n % 60)) -eq 0 ] && { docker ps --filter name=^/$$NOME$$ --format '{{.Names}}' | grep -q . || { subir; voz_subir || true; clone_subir || true; }; }
         done
 
 volumes:
