@@ -220,15 +220,20 @@ services:
         <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Gravar a voz da Nina</title>
         <style>body{margin:0;background:#f7f3ee;color:#2e2b33;font:17px/1.6 system-ui,-apple-system,sans-serif}main{max-width:620px;margin:0 auto;padding:32px 16px}h1{font-family:Georgia,serif;font-weight:400;font-size:2rem;margin:0 0 8px}p,li{color:#5b5662}.cartao{background:#fffdfa;border:1px solid #e4ddd6;border-radius:18px;padding:20px;margin:18px 0}.texto{font-size:1.15rem;color:#2e2b33;line-height:1.7}button{font:500 1rem system-ui;border:0;border-radius:999px;padding:14px 26px;cursor:pointer;background:#2e2b33;color:#fff;margin:6px 8px 6px 0}button.sec{background:#fff;color:#2e2b33;border:1px solid #d9cfd6}button:disabled{opacity:.4}#tempo{font-variant-numeric:tabular-nums;color:#a7798a;font-weight:600}#status{margin-top:12px;font-weight:500}audio{width:100%;margin-top:12px}.rec{background:#b98393!important}</style></head><body><main>
         <h1>Gravar a voz da Nina</h1>
-        <p>A Nina vai falar com a sua voz. Grave de 15 a 25 segundos lendo o texto abaixo.</p>
+        <p>A Nina, assistente do site da Murinoi, vai falar com a sua voz. Grave de 15 a 25 segundos lendo o texto abaixo.</p>
         <ul><li>Lugar silencioso, sem TV, ventilador ou eco.</li><li>Celular a um palmo da boca.</li><li>Fale do seu jeito natural, calmo e simpático, como falaria com um cliente.</li></ul>
         <div class="cartao texto">Olá! Eu sou a Nina, da Murinoi. Aqui a gente transforma ideias em soluções que economizam tempo e dinheiro: aplicativos, sistemas, sites e automações com inteligência artificial. Me conta o que mais toma o seu tempo hoje, que eu te mostro como resolver. Vamos começar?</div>
+        <div class="cartao"><label style="display:block;font-weight:500;margin-bottom:6px" for="nome">Seu nome completo</label><input id="nome" autocomplete="name" style="width:100%;box-sizing:border-box;font:inherit;padding:12px 14px;border:1px solid #d9cfd6;border-radius:12px;background:#fff"><label style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;color:#2e2b33"><input type="checkbox" id="aceite" style="margin-top:5px;width:20px;height:20px;flex:none"><span id="termo">Eu, <b>[seu nome]</b>, sou a dona desta voz e autorizo a Murinoi a usá-la como voz da assistente Nina no site murinoi.com. Posso pedir a remoção quando quiser.</span></label></div>
         <div class="cartao"><button id="gravar">● Gravar</button><span id="tempo">0:00</span>
         <audio id="ouvir" controls hidden></audio>
         <div><button id="enviar" disabled>Usar esta gravação</button><button id="refazer" class="sec" hidden>Gravar de novo</button></div>
         <div id="status"></div></div>
-        <p style="font-size:.85rem">Grave somente a sua própria voz. Ao enviar, você autoriza o uso dela como voz da Nina no site murinoi.com. Você pode trocar a gravação quando quiser, voltando a esta página.</p>
+        <p style="font-size:.85rem">Grave somente a sua própria voz. Você pode trocar a gravação quando quiser, voltando a esta página, ou remover a sua voz da Nina:</p><button id="remover" class="sec">Remover minha voz da Nina</button>
         </main><script>
+        var nm = document.getElementById('nome'), ac = document.getElementById('aceite'), tm = document.getElementById('termo');
+        function pode() { return !!blob && nm.value.trim().length >= 3 && ac.checked; }
+        function atualiza() { var n = nm.value.trim(); tm.querySelector('b').textContent = n || '[seu nome]'; bE.disabled = !pode(); if (blob && /preencha/.test(st.textContent) && pode()) st.textContent = 'Tudo certo. Toque em "Usar esta gravação".'; }
+        nm.oninput = atualiza; ac.onchange = atualiza;
         var rec = null, partes = [], blob = null, ini = 0, tick = 0, bG = document.getElementById('gravar'), bE = document.getElementById('enviar'), bR = document.getElementById('refazer'), au = document.getElementById('ouvir'), st = document.getElementById('status'), tp = document.getElementById('tempo');
         function parar() { if (rec && rec.state !== 'inactive') rec.stop(); clearInterval(tick); bG.textContent = '● Gravar'; bG.classList.remove('rec'); }
         bG.onclick = function () {
@@ -236,27 +241,33 @@ services:
           navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: true, autoGainControl: true}}).then(function (s) {
             partes = []; rec = new MediaRecorder(s);
             rec.ondataavailable = function (e) { if (e.data.size) partes.push(e.data); };
-            rec.onstop = function () { s.getTracks().forEach(function (t) { t.stop(); }); blob = new Blob(partes, {type: rec.mimeType || 'audio/webm'}); au.src = URL.createObjectURL(blob); au.hidden = false; bE.disabled = false; bR.hidden = false; st.textContent = 'Ouça a gravação. Se ficou boa, toque em "Usar esta gravação".'; };
+            rec.onstop = function () { s.getTracks().forEach(function (t) { t.stop(); }); blob = new Blob(partes, {type: rec.mimeType || 'audio/webm'}); au.src = URL.createObjectURL(blob); au.hidden = false; bR.hidden = false; atualiza(); st.textContent = pode() ? 'Ouça a gravação. Se ficou boa, toque em "Usar esta gravação".' : 'Ouça a gravação. Para usar, preencha o seu nome e marque a autorização acima.'; };
             rec.start(); ini = Date.now(); bG.textContent = '■ Parar'; bG.classList.add('rec'); st.textContent = 'Gravando… leia o texto com calma.';
             tick = setInterval(function () { var s2 = Math.floor((Date.now() - ini) / 1000); tp.textContent = Math.floor(s2 / 60) + ':' + String(s2 % 60).padStart(2, '0'); if (s2 >= 40) parar(); }, 250);
           }).catch(function () { st.textContent = 'Não consegui acessar o microfone. Permita o microfone para este site e tente de novo.'; });
         };
         bR.onclick = function () { blob = null; au.hidden = true; bE.disabled = true; bR.hidden = true; tp.textContent = '0:00'; st.textContent = ''; };
         bE.onclick = function () {
-          if (!blob) return; bE.disabled = true; st.textContent = 'Enviando e preparando a sua voz… isso pode levar alguns minutos, não feche a página.';
-          fetch(location.href, {method: 'POST', body: blob}).then(function (r) { return r.ok ? r.json() : r.text().then(function (t) { throw t; }); })
+          if (!pode()) return; bE.disabled = true;
+          var fd = new FormData(); fd.append('nome', nm.value.trim()); fd.append('aceite', 'sim'); fd.append('audio', blob, 'gravacao'); st.textContent = 'Enviando e preparando a sua voz… isso pode levar alguns minutos, não feche a página.';
+          fetch(location.href, {method: 'POST', body: fd}).then(function (r) { return r.ok ? r.json() : r.text().then(function (t) { throw t; }); })
             .then(function () { st.textContent = 'Pronto! A Nina já está falando com a sua voz. 🎉'; })
-            .catch(function (e) { st.textContent = 'Não deu certo: ' + (e || 'tente de novo') + '.'; bE.disabled = false; });
+            .catch(function (e) { st.textContent = 'Não deu certo: ' + (e || 'tente de novo') + '.'; atualiza(); });
+        };
+        document.getElementById('remover').onclick = function () {
+          if (!confirm('Remover a sua voz da Nina? Ela volta a falar com a voz padrão.')) return;
+          fetch(location.href.replace('/voz/gravar', '/voz/remover'), {method: 'POST'}).then(function (r) { st.textContent = r.ok ? 'Sua voz foi removida. A Nina voltou para a voz padrão.' : 'Não consegui remover agora, tente de novo.'; });
         };
         </script></body></html>
         HTML
         cat > /tmp/clone.py <<'PY'
-        import asyncio, hashlib, io, os, subprocess, time
+        import asyncio, datetime, hashlib, io, json, os, subprocess, time
         from aiohttp import web
         import torch, soundfile as sf
         from chatterbox.mtl_tts import ChatterboxMultilingualTTS
         torch.set_num_threads(max(1, os.cpu_count() or 1))
-        COD = os.environ['CODIGO']; REF = '/dados/referencia.wav'
+        COD = os.environ['CODIGO']; DADOS = os.environ.get('DADOS', '/dados')
+        REF = DADOS + '/referencia.wav'; TERMO = DADOS + '/consentimento.json'
         est = {'modelo': None, 'versao': None, 'pronto': False}
         trava = asyncio.Lock(); andamento = {}
         def log(*a): print(*a, flush=True)
@@ -264,13 +275,15 @@ services:
             if est['modelo'] is None:
                 log('voz clonada: carregando o modelo (a primeira vez baixa uns 3 GB)...')
                 est['modelo'] = ChatterboxMultilingualTTS.from_pretrained(device='cpu', t3_model='v3')
-            if os.path.exists(REF):
+            if os.path.exists(REF) and os.path.exists(TERMO):   # só usa a voz com a autorização registrada
                 est['modelo'].prepare_conditionals(REF)
                 est['versao'] = hashlib.sha1(open(REF, 'rb').read()).hexdigest()[:12]
+                try: c = json.load(open(TERMO)); log('voz clonada ativa: gravada e autorizada por %s em %s' % (c.get('nome'), c.get('data')))
+                except Exception: pass
                 t0 = time.time(); w = gerar('Olá! Eu sou a Nina, da Murinoi.')
                 log('voz clonada pronta: frase curta gerada em %.1f s' % (time.time() - t0))
             else:
-                est['versao'] = None; log('voz clonada: aguardando a gravação da sua voz')
+                est['versao'] = None; log('voz clonada: aguardando a gravação (com autorização) da voz')
             est['pronto'] = True
         def gerar(t):
             w = est['modelo'].generate(t, language_id='pt')
@@ -297,22 +310,40 @@ services:
             return web.Response(text=os.environ.get('GRAVAR_HTML', ''), content_type='text/html')
         async def receber(req):
             if req.query.get('c') != COD: raise web.HTTPForbidden()
-            corpo = await req.read()
+            form = await req.post()
+            nome = ' '.join(str(form.get('nome', '')).split())[:120]
+            audio = form.get('audio')
+            if len(nome) < 3: raise web.HTTPBadRequest(text='informe o seu nome completo')
+            if form.get('aceite') != 'sim': raise web.HTTPBadRequest(text='é preciso autorizar o uso da voz')
+            if audio is None or not hasattr(audio, 'file'): raise web.HTTPBadRequest(text='gravação vazia')
+            corpo = audio.file.read()
             if len(corpo) < 2000: raise web.HTTPBadRequest(text='gravação vazia')
-            os.makedirs('/dados', exist_ok=True)
-            with open('/dados/entrada', 'wb') as f: f.write(corpo)
-            r = subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', '/dados/entrada', '-ac', '1', '-ar', '24000',
-                                '-af', 'silenceremove=start_periods=1:start_threshold=-45dB,loudnorm', '-t', '20', '/dados/nova.wav'])
+            os.makedirs(DADOS, exist_ok=True)
+            with open(DADOS + '/entrada', 'wb') as f: f.write(corpo)
+            r = subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', DADOS + '/entrada', '-ac', '1', '-ar', '24000',
+                                '-af', 'silenceremove=start_periods=1:start_threshold=-45dB,loudnorm', '-t', '20', DADOS + '/nova.wav'])
+            os.remove(DADOS + '/entrada')
             if r.returncode != 0: raise web.HTTPBadRequest(text='não consegui ler o áudio')
-            os.replace('/dados/nova.wav', REF)
+            termo = {'nome': nome, 'data': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'),
+                     'texto': 'Eu, ' + nome + ', sou a dona desta voz e autorizo a Murinoi a usá-la como voz da assistente Nina no site murinoi.com. Posso pedir a remoção quando quiser.',
+                     'gravacao_sha256': hashlib.sha256(open(DADOS + '/nova.wav', 'rb').read()).hexdigest(),
+                     'ip': req.headers.get('X-Forwarded-For', req.remote or '').split(',')[0].strip()}
+            with open(TERMO + '.tmp', 'w') as f: json.dump(termo, f, ensure_ascii=False, indent=1)
+            os.replace(TERMO + '.tmp', TERMO); os.replace(DADOS + '/nova.wav', REF)
             async with trava:
                 await asyncio.get_running_loop().run_in_executor(None, preparar)
             return web.json_response({'ok': True, 'versao': est['versao']})
+        async def remover(req):
+            if req.query.get('c') != COD: raise web.HTTPForbidden()
+            for f in (REF, TERMO):
+                if os.path.exists(f): os.remove(f)
+            est['versao'] = None; log('voz clonada removida a pedido; a Nina volta para a voz padrão')
+            return web.json_response({'ok': True})
         async def iniciar(app):
             asyncio.get_running_loop().run_in_executor(None, preparar)
         app = web.Application(client_max_size=25 * 1024 * 1024)
         app.router.add_get('/versao', versao); app.router.add_get('/sintetizar', sintetizar)
-        app.router.add_get('/voz/gravar', pagina); app.router.add_post('/voz/gravar', receber)
+        app.router.add_get('/voz/gravar', pagina); app.router.add_post('/voz/gravar', receber); app.router.add_post('/voz/remover', remover)
         app.on_startup.append(iniciar)
         web.run_app(app, port=8090, access_log=None)
         PY
@@ -336,7 +367,8 @@ services:
               murinoi-clone-img sh -c 'exec python -c "$$CLONE_PY"' >/dev/null && echo "voz clonada: serviço no ar (acompanhe o log do contêiner murinoi-clone)"
           fi
           echo "=============================================="
-          echo " VOZ CLONADA DA NINA: grave a sua voz em"
+          echo " VOZ CLONADA DA NINA: envie este link para a pessoa dona da voz"
+          echo " (ela grava, informa o nome e autoriza o uso):"
           echo " https://murinoi.com/voz/gravar?c=$$COD"
           echo "=============================================="
         }
