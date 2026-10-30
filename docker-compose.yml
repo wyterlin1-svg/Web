@@ -275,6 +275,16 @@ services:
             if est['modelo'] is None:
                 log('voz clonada: carregando o modelo (a primeira vez baixa uns 3 GB)...')
                 est['modelo'] = ChatterboxMultilingualTTS.from_pretrained(device='cpu', t3_model='v3')
+                m = est['modelo']
+                if os.environ.get('LEVE', 'sim') == 'sim':   # modo leve: parte principal em 8 bits (menos memória, mais rápido)
+                    orig = m.t3
+                    try:
+                        t0 = time.time()
+                        m.t3 = torch.quantization.quantize_dynamic(orig, {torch.nn.Linear}, dtype=torch.qint8)
+                        m.generate('Teste.', language_id='pt')
+                        log('voz clonada: modo leve ativo, teste em %.1f s' % (time.time() - t0))
+                    except Exception as e:
+                        m.t3 = orig; log('voz clonada: modo leve indisponível (%s); seguindo no modo normal' % e)
             if os.path.exists(REF) and os.path.exists(TERMO):   # só usa a voz com a autorização registrada
                 est['modelo'].prepare_conditionals(REF)
                 est['versao'] = hashlib.sha1(open(REF, 'rb').read()).hexdigest()[:12]
