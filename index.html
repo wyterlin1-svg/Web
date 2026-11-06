@@ -951,12 +951,24 @@ else {
     aiIn.classList.toggle('ouvindo', estado !== 'parado');
     aiIn.placeholder = estado === 'ouvindo' ? 'Ouvindo… toque para parar' : estado === 'transcrevendo' ? 'Transcrevendo…' : PH;
   };
-  const mostrar = () => { const t = (fixo + ' ' + prov).replace(/\s+/g, ' ').trim(); aiIn.value = (base + t).trimStart(); aiIn.dispatchEvent(new Event('input')); };
+  /* junta dois trechos sem repetir: alguns celulares (Android) reenviam o que já foi dito, às vezes acumulado */
+  const pal = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}\s]/gu, '').split(/\s+/).filter(Boolean);
+  const juntar = (a, b) => {
+    a = a.trim(); b = b.trim(); if (!a) return b; if (!b) return a;
+    const A = pal(a), B = pal(b), ja = A.join(' '), jb = B.join(' ');
+    if (jb.startsWith(ja)) return b;            /* b já contém a (acumulado) */
+    if ((' ' + ja + ' ').includes(' ' + jb + ' ')) return a;   /* b é repetição */
+    for (let k = Math.min(A.length, B.length); k > 0; k--) {   /* fim de a == começo de b: emenda sem duplicar */
+      if (A.slice(-k).join(' ') === B.slice(0, k).join(' ')) return a + ' ' + b.split(/\s+/).slice(k).join(' ');
+    }
+    return a + ' ' + b;
+  };
+  const mostrar = () => { const t = juntar(fixo, prov).replace(/\s+/g, ' ').trim(); aiIn.value = (base + t).trimStart(); aiIn.dispatchEvent(new Event('input')); };
   /* encerra: junta o que foi dito, arruma e deixa na caixa pronto para enviar */
   const finalizar = () => {
     clearTimeout(tSolta); clearTimeout(tLimite); ouvindo = false; if (!rec) return;
     const r = rec; rec = null; r.onresult = r.onend = r.onerror = null; try { r.abort(); } catch (_) {}
-    const dito = aiArrumar((fixo + ' ' + prov).trim());
+    const dito = aiArrumar(juntar(fixo, prov));
     aiIn.value = (base + dito).trim(); aiIn.dispatchEvent(new Event('input'));
     visual('parado'); aiMic.setAttribute('aria-label', 'Toque para falar'); aiMic.title = 'Toque para falar';
     if (dito && matchMedia('(hover:hover)').matches) { aiIn.focus({preventScroll: true}); aiIn.setSelectionRange(aiIn.value.length, aiIn.value.length); }
@@ -967,18 +979,18 @@ else {
     aiPararVoz();
     clearTimeout(tDica); ouvindo = true; iniciou = false; fixo = prov = '';
     base = aiIn.value.trim() ? aiIn.value.trim() + ' ' : '';
-    rec = new AiSR(); rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
+    rec = new AiSR(); rec.lang = 'pt-BR'; rec.continuous = !/Android/i.test(navigator.userAgent); rec.interimResults = true; rec.maxAlternatives = 1;
     rec.onstart = () => { iniciou = true; if (!ouvindo) encerrar(); };
     rec.onresult = ev => {
       prov = '';
-      for (let i = ev.resultIndex; i < ev.results.length; i++) { const r = ev.results[i]; if (r.isFinal) fixo += ' ' + r[0].transcript.trim(); else prov += r[0].transcript; }
+      for (let i = 0; i < ev.results.length; i++) prov = juntar(prov, ev.results[i][0].transcript);   /* refaz o trecho inteiro a cada evento, nunca acumula duas vezes */
       mostrar();
     };
     rec.onerror = ev => {
       if (/not-allowed|service-not-allowed|audio-capture/.test(ev.error)) { finalizar(); aiBolha('Para falar comigo por voz, permita o uso do microfone no navegador.', 'bot'); }
     };
     /* alguns celulares encerram sozinhos no meio da fala: até tocar de novo no microfone, continua ouvindo */
-    rec.onend = () => { if (ouvindo && rec) { try { rec.start(); } catch (_) { finalizar(); } } else finalizar(); };
+    rec.onend = () => { fixo = juntar(fixo, prov); prov = ''; if (ouvindo && rec) { try { rec.start(); } catch (_) { finalizar(); } } else finalizar(); };
     visual('ouvindo'); aiMic.setAttribute('aria-label', 'Parar de ouvir'); aiMic.title = 'Parar de ouvir';
     tLimite = setTimeout(pausar, 60000); /* esqueceu ligado: encerra e transcreve sozinho */
     try { rec.start(); } catch (_) { finalizar(); }
