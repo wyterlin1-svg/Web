@@ -465,8 +465,6 @@ h2{font-size:clamp(1.9rem,min(4.4vw,6.6vh),3.8rem)}
 .ai-f .ai-mic{background:transparent;color:#8a7aa6;border:1px solid #ddd3e3;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 .ai-f .ai-mic.on.on{transform:scale(1.12)}
 .ai-f .ai-mic.trans{opacity:.6}
-.ai-mic .i-pausa,.ai-mic.on .i-mic{display:none}
-.ai-mic.on .i-pausa{display:block}
 .ai-f .ai-mic:not(:disabled):hover{color:var(--fg);transform:none}
 .ai-f .ai-mic.on{background:#b98393;border-color:#b98393;color:#fff;animation:aiMic 1.4s infinite}
 @keyframes aiMic{0%{box-shadow:0 0 0 0 rgba(185,131,147,.5)}70%{box-shadow:0 0 0 12px rgba(185,131,147,0)}100%{box-shadow:0 0 0 0 rgba(185,131,147,0)}}
@@ -749,7 +747,7 @@ window.__boot = (() => {
   <header class="ai-hd"><svg viewBox="0 0 48 48" aria-hidden="true" class="ai-ic"><defs><linearGradient id="aig3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b9ac0"/><stop offset=".5" stop-color="#a28fbc"/><stop offset="1" stop-color="#c08d9c"/></linearGradient></defs><circle cx="24" cy="24" r="23" fill="url(#aig3)"/><path d="M24 11c1.2 6.6 4.4 9.8 11 11-6.6 1.2-9.8 4.4-11 11-1.2-6.6-4.4-9.8-11-11 6.6-1.2 9.8-4.4 11-11z" fill="#fff"/><circle cx="34.5" cy="13.5" r="2.4" fill="#fff" opacity=".85"/></svg><div><strong id="aiTit">Nina · Murinoi</strong><small>Agente de IA · responde na hora</small></div><button class="ai-x" id="aiX" type="button" aria-label="Fechar conversa">×</button></header>
   <div class="ai-msgs" id="aiMsgs" aria-live="polite"></div>
   <div class="ai-sug" id="aiSug"><button type="button">Quero um app</button><button type="button">Automatizar meu negócio</button><button type="button">Preciso de um site</button><button type="button">Tenho só uma ideia</button></div>
-  <form class="ai-f" id="aiF"><textarea id="aiIn" rows="1" maxlength="1200" placeholder="Escreva sua mensagem…" aria-label="Sua mensagem"></textarea><button type="button" class="ai-mic" id="aiMic" aria-label="Toque para falar" title="Toque para falar"><svg class="i-mic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><svg class="i-pausa" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5" width="3.6" height="14" rx="1.2" fill="currentColor"/><rect x="13.4" y="5" width="3.6" height="14" rx="1.2" fill="currentColor"/></svg></button><button type="submit" id="aiGo" aria-label="Enviar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>
+  <form class="ai-f" id="aiF"><textarea id="aiIn" rows="1" maxlength="1200" placeholder="Escreva sua mensagem…" aria-label="Sua mensagem"></textarea><button type="button" class="ai-mic" id="aiMic" aria-label="Toque para falar" title="Toque para falar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><button type="submit" id="aiGo" aria-label="Enviar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>
   <p class="ai-nota">Conversa atendida por IA. Veja a <a href="privacidade.html">privacidade</a>.</p>
 </section>
 <script type="module">
@@ -951,7 +949,7 @@ else {
   const visual = estado => {
     aiMic.classList.toggle('on', estado === 'ouvindo'); aiMic.classList.toggle('trans', estado === 'transcrevendo');
     aiIn.classList.toggle('ouvindo', estado !== 'parado');
-    aiIn.placeholder = estado === 'ouvindo' ? 'Ouvindo… toque na pausa' : estado === 'transcrevendo' ? 'Transcrevendo…' : PH;
+    aiIn.placeholder = estado === 'ouvindo' ? 'Ouvindo… toque para parar' : estado === 'transcrevendo' ? 'Transcrevendo…' : PH;
   };
   const mostrar = () => { const t = (fixo + ' ' + prov).replace(/\s+/g, ' ').trim(); aiIn.value = (base + t).trimStart(); aiIn.dispatchEvent(new Event('input')); };
   /* encerra: junta o que foi dito, arruma e deixa na caixa pronto para enviar */
@@ -979,13 +977,13 @@ else {
     rec.onerror = ev => {
       if (/not-allowed|service-not-allowed|audio-capture/.test(ev.error)) { finalizar(); aiBolha('Para falar comigo por voz, permita o uso do microfone no navegador.', 'bot'); }
     };
-    /* alguns celulares encerram sozinhos no meio da fala: enquanto não tocar em pausar, continua ouvindo */
+    /* alguns celulares encerram sozinhos no meio da fala: até tocar de novo no microfone, continua ouvindo */
     rec.onend = () => { if (ouvindo && rec) { try { rec.start(); } catch (_) { finalizar(); } } else finalizar(); };
-    visual('ouvindo'); aiMic.setAttribute('aria-label', 'Pausar e transcrever'); aiMic.title = 'Pausar e transcrever';
+    visual('ouvindo'); aiMic.setAttribute('aria-label', 'Parar de ouvir'); aiMic.title = 'Parar de ouvir';
     tLimite = setTimeout(pausar, 60000); /* esqueceu ligado: encerra e transcreve sozinho */
     try { rec.start(); } catch (_) { finalizar(); }
   };
-  /* toque em pausar: para de ouvir e deixa o recado escrito na caixa */
+  /* novo toque no microfone: para de ouvir e deixa o recado escrito na caixa */
   const pausar = () => {
     if (!rec || !ouvindo) return;
     ouvindo = false; clearTimeout(tLimite);
@@ -999,7 +997,7 @@ else {
     try { rec.stop(); } catch (_) { finalizar(); }   /* stop() entrega o trecho final antes de onend */
     tSolta = setTimeout(finalizar, 2500);
   };
-  /* um toque liga, outro toque pausa (Espaço/Enter também, pelo clique nativo do botão) */
+  /* um clique no microfone liga, outro clique desliga (Espaço/Enter também, pelo clique nativo do botão) */
   aiMic.addEventListener('click', e => { e.preventDefault(); if (rec) { if (ouvindo) pausar(); } else comecar(); });
   aiMic.addEventListener('contextmenu', e => e.preventDefault());
 }
