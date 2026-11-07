@@ -19,6 +19,7 @@
 </script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="only light">
 <title>Murinoi - Soluções Inteligentes</title>
 <meta name="description" content="A Murinoi desenvolve soluções sob medida para o seu negócio: aplicativos, sistemas e automações que poupam tempo e dinheiro.">
 <meta name="theme-color" content="#f7f3ee">
@@ -40,7 +41,7 @@
 <style>@font-face{font-family:'Cormorant Garamond';font-style:italic;font-weight:400;font-display:swap;src:url(/fonts/cormorant-garamond-400i.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}@font-face{font-family:'Cormorant Garamond';font-style:italic;font-weight:500;font-display:swap;src:url(/fonts/cormorant-garamond-400i.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/cormorant-garamond-400.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/cormorant-garamond-400.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}@font-face{font-family:'Jost';font-style:normal;font-weight:300;font-display:swap;src:url(/fonts/jost-300.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}@font-face{font-family:'Jost';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/jost-300.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}@font-face{font-family:'Jost';font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/jost-300.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}@font-face{font-family:'Michroma';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/michroma-400.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}</style>
 <style>
 :root{
-  color-scheme:light;
+  color-scheme:only light;
   /* pastéis clássicos: marfim, rosa antigo, lavanda, azul névoa, sálvia */
   --bg:#f7f3ee;--fg:#2e2b33;--body:#5b5662;--mute:#8e8894;--line:rgba(70,58,82,.14);--panel:rgba(250,247,243,.9);
   --card:rgba(255,253,250,.8);
@@ -469,6 +470,8 @@ h2{font-size:clamp(1.9rem,min(4.4vw,6.6vh),3.8rem)}
 .ai-f .ai-mic.on{background:#b98393;border-color:#b98393;color:#fff;animation:aiMic 1.4s infinite}
 @keyframes aiMic{0%{box-shadow:0 0 0 0 rgba(185,131,147,.5)}70%{box-shadow:0 0 0 12px rgba(185,131,147,0)}100%{box-shadow:0 0 0 0 rgba(185,131,147,0)}}
 .ai-f textarea.ouvindo::placeholder{color:#b98393}
+.ai-f textarea.ajustando{background-image:linear-gradient(90deg,transparent,rgba(185,131,147,.12),transparent);background-size:200% 100%;animation:aiAjuste 1.1s linear infinite}
+@keyframes aiAjuste{from{background-position:100% 0}to{background-position:-100% 0}}
 .foot .flk{display:inline-flex;gap:18px}
 .ai-sep{align-self:stretch;display:flex;align-items:center;gap:10px;margin:6px 0;font:400 .6875rem var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
 .ai-sep::before,.ai-sep::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -924,8 +927,9 @@ function aiVozBotao(el, txt) {
   };
   el.classList.add('voz'); el.appendChild(b);
 }
-/* microfone: um toque liga, outro toque desliga — o texto aparece pronto na caixa (Enter ou botão para enviar).
-   Com a IA da Nina no ar, o áudio é transcrito pelo Gemini, palavra por palavra; sem ela, usa o ditado do próprio aparelho. */
+/* microfone: um toque liga, outro toque desliga. Como no ditado do Claude: as palavras aparecem AO VIVO enquanto a pessoa fala
+   (reconhecimento do próprio aparelho) e, ao parar, o texto já está na caixa na hora. Com a IA da Nina no ar, o áudio gravado
+   vai em paralelo para o Gemini, que devolve a versão exata e substitui o texto em ~1 s (se a pessoa não tiver mexido). */
 const AiSR = window.SpeechRecognition || window.webkitSpeechRecognition, aiMic = $('#aiMic');
 const AiGRAVA = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
 let aiPararMic = () => {}, aiIA = false;
@@ -1007,17 +1011,59 @@ if (!AiSR) aiMic.hidden = true;
     if (iniciou) encerrar(); /* se ainda está pedindo permissão do microfone, encerra assim que começar */
   };
   const dica = () => { finalizar(); aiIn.placeholder = 'Não ouvi nada — toque e fale'; clearTimeout(tDica); tDica = setTimeout(() => { if (!rec) aiIn.placeholder = PH; }, 2500); };
+  /* depois de parar, o aparelho às vezes ainda entrega a última palavra: acrescenta se a pessoa não mexeu na caixa */
+  const sobra = (r, escrito) => {
+    let f = fixo, pv = prov;
+    r.onresult = ev => {
+      pv = ''; for (let i = 0; i < ev.results.length; i++) pv = juntar(pv, ev.results[i][0].transcript);
+      if (aiIn.value !== escrito) return;
+      escrito = (base + aiArrumar(juntar(f, pv))).trim(); aiIn.value = escrito; aiIn.dispatchEvent(new Event('input'));
+    };
+    r.onend = r.onerror = null;
+    try { r.stop(); } catch (_) {}
+    setTimeout(() => { r.onresult = null; try { r.abort(); } catch (_) {} }, 1200);
+  };
   const encerrar = () => {
     if (!rec) return;
     if (!(fixo + prov).trim()) return dica();
-    visual('transcrevendo');
-    try { rec.stop(); } catch (_) { finalizar(); }   /* stop() entrega o trecho final antes de onend */
-    tSolta = setTimeout(finalizar, 2500);
+    const r = rec; rec = null; clearTimeout(tLimite); ouvindo = false;
+    const escrito = (base + aiArrumar(juntar(fixo, prov))).trim();
+    aiIn.value = escrito; aiIn.dispatchEvent(new Event('input'));
+    visual('parado'); aiMic.setAttribute('aria-label', 'Toque para falar'); aiMic.title = 'Toque para falar';
+    if (matchMedia('(hover:hover)').matches) { aiIn.focus({preventScroll: true}); aiIn.setSelectionRange(aiIn.value.length, aiIn.value.length); }
+    sobra(r, escrito);
   };
   /* ---- modo IA: grava o áudio e a Nina (Gemini) transcreve exatamente o que foi dito ---- */
-  let grav = null, fluxo = null, partes = [], tIni = 0, tRelogio = 0, descartar = false;
+  let grav = null, fluxo = null, partes = [], tIni = 0, tRelogio = 0, descartar = false, vivo = null, rodada = 0, pico = 0, medidor = null;
   const relogio = () => { const s = Math.floor((Date.now() - tIni) / 1000); aiIn.placeholder = 'Ouvindo… ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + ' · toque para parar'; };
-  const soltarMic = () => { if (fluxo) fluxo.getTracks().forEach(t => t.stop()); fluxo = null; };
+  const soltarMic = () => {
+    if (fluxo) fluxo.getTracks().forEach(t => t.stop()); fluxo = null;
+    if (medidor) { clearInterval(medidor.t); try { medidor.ctx.close(); } catch (_) {} medidor = null; }
+  };
+  /* mede o volume da gravação: se ficou muda (o aparelho tomou o microfone para o ditado), não adianta mandar para a IA */
+  const medir = () => {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext, ctx = new AC(), an = ctx.createAnalyser(), buf = new Float32Array(1024);
+      an.fftSize = 1024; ctx.createMediaStreamSource(fluxo).connect(an); pico = 0;
+      medidor = {ctx, t: setInterval(() => { an.getFloatTimeDomainData(buf); let m = 0; for (const v of buf) m = Math.max(m, Math.abs(v)); pico = Math.max(pico, m); }, 120)};
+    } catch (_) { pico = 1; }
+  };
+  /* texto ao vivo enquanto grava (reconhecimento do aparelho); se o aparelho não deixar, segue só a gravação com o relógio */
+  const vivoComecar = () => {
+    if (!AiSR) return;
+    fixo = prov = '';
+    try {
+      const r = vivo = new AiSR(); r.lang = 'pt-BR'; r.continuous = !/Android/i.test(navigator.userAgent); r.interimResults = true; r.maxAlternatives = 1;
+      r.onresult = ev => {
+        if (vivo !== r) return;
+        prov = ''; for (let i = 0; i < ev.results.length; i++) prov = juntar(prov, ev.results[i][0].transcript);
+        mostrar(); aiIn.placeholder = '';
+      };
+      r.onerror = ev => { if (vivo === r && /not-allowed|service-not-allowed|audio-capture|network/.test(ev.error)) { vivo = null; tRelogio = tRelogio || setInterval(relogio, 500); } };
+      r.onend = () => { if (vivo !== r) return; fixo = juntar(fixo, prov); prov = ''; if (grav && grav !== 'pedindo') { try { r.start(); } catch (_) { vivo = null; } } };
+      r.start();
+    } catch (_) { vivo = null; }
+  };
   const gravar = async () => {
     aiPararVoz(); clearTimeout(tDica);
     base = aiIn.value.trim() ? aiIn.value.trim() + ' ' : '';
@@ -1030,43 +1076,67 @@ if (!AiSR) aiMic.hidden = true;
     catch (_) { grav = new MediaRecorder(fluxo); }
     partes = []; descartar = false;
     grav.ondataavailable = e => { if (e.data && e.data.size) partes.push(e.data); };
-    grav.onstop = transcrever;
-    grav.start(1000); tIni = Date.now();
-    visual('ouvindo'); relogio(); tRelogio = setInterval(relogio, 500);
+    const minha = ++rodada; grav.onstop = () => transcrever(minha);
+    grav.start(1000); tIni = Date.now(); medir();
+    visual('ouvindo'); relogio(); tRelogio = 0;
+    vivoComecar(); if (!vivo) tRelogio = setInterval(relogio, 500);
     aiMic.setAttribute('aria-label', 'Parar de ouvir'); aiMic.title = 'Parar de ouvir';
     tLimite = setTimeout(pararGrav, 90000);   /* esqueceu ligado: para e transcreve sozinho */
   };
+  let escrito = '', dentro = '';
   const pararGrav = () => {
-    clearTimeout(tLimite); clearInterval(tRelogio);
+    clearTimeout(tLimite); clearInterval(tRelogio); tRelogio = 0;
     if (grav === 'pedindo') { grav = null; return; }
     if (!grav || grav.state === 'inactive') return;
-    visual('transcrevendo'); grav.stop(); soltarMic();
+    const g = grav; grav = null;
+    /* entrega na hora o que já apareceu ao vivo; a IA só confere e ajusta depois */
+    const r = vivo; vivo = null;
+    dentro = juntar(fixo, prov); escrito = '';
+    if (dentro && !descartar) {
+      escrito = (base + aiArrumar(dentro)).trim(); aiIn.value = escrito; aiIn.dispatchEvent(new Event('input'));
+      visual('parado'); aiMic.setAttribute('aria-label', 'Toque para falar'); aiMic.title = 'Toque para falar';
+      if (matchMedia('(hover:hover)').matches) { aiIn.focus({preventScroll: true}); aiIn.setSelectionRange(aiIn.value.length, aiIn.value.length); }
+      if (r) { r.onend = r.onerror = null; try { r.abort(); } catch (_) {} }
+    } else {
+      if (r) { r.onresult = r.onend = r.onerror = null; try { r.abort(); } catch (_) {} }
+      if (!descartar) visual('transcrevendo');
+    }
+    try { g.requestData(); } catch (_) {}
+    g.stop(); soltarMic();
   };
-  const cancelarGrav = () => { if (!grav) return; descartar = true; pararGrav(); grav = null; visual('parado'); };
+  const cancelarGrav = () => { if (!grav) return; descartar = true; pararGrav(); visual('parado'); };
   const avisar = (t, ms) => { aiIn.placeholder = t; clearTimeout(tDica); tDica = setTimeout(() => { if (!grav && !rec) aiIn.placeholder = PH; }, ms || 3000); };
-  const transcrever = async () => {
-    const g = grav, blob = new Blob(partes, {type: (g && g.mimeType) || 'audio/webm'}); grav = 'enviando';
-    const pronto = () => { grav = null; visual('parado'); aiMic.setAttribute('aria-label', 'Toque para falar'); aiMic.title = 'Toque para falar'; };
-    if (descartar) return pronto();
-    if (Date.now() - tIni < 700 || blob.size < 1200) { pronto(); return avisar('Não ouvi nada — toque e fale'); }
+  const transcrever = async minha => {
+    const blob = new Blob(partes, {type: (partes[0] && partes[0].type) || 'audio/webm'});
+    const meu = escrito, base0 = base;
+    const pronto = () => { if (minha !== rodada || grav) return; visual('parado'); aiMic.setAttribute('aria-label', 'Toque para falar'); aiMic.title = 'Toque para falar'; };
+    if (descartar) { descartar = false; return pronto(); }
+    const mudo = pico < 0.01;
+    if (Date.now() - tIni < 700 || blob.size < 1200 || (mudo && meu)) { pronto(); return meu ? 0 : avisar('Não ouvi nada — toque e fale'); }
+    if (meu) aiIn.classList.add('ajustando');
     let texto = null;
     try {
-      const b64 = await new Promise((ok, erro) => { const f = new FileReader(); f.onload = () => ok(String(f.result).split(',')[1] || ''); f.onerror = erro; f.readAsDataURL(blob); });
-      const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 45000);
-      const r = await fetch('/nina/ouvir', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({audio: b64, tipo: blob.type}), signal: ctl.signal});
+      const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 20000);
+      const r = await fetch('/nina/ouvir', {method: 'POST', headers: {'Content-Type': (blob.type || 'audio/webm').split(';')[0]}, body: blob, signal: ctl.signal});
       clearTimeout(tm);
       if (r.ok) texto = String((await r.json()).texto || '').trim();
     } catch (_) {}
+    aiIn.classList.remove('ajustando');
     pronto();
+    if (minha !== rodada) return;   /* já começou outra gravação */
+    if (meu) {   /* já havia texto ao vivo: troca pela versão exata só se a pessoa não mexeu nem enviou */
+      if (texto && aiIn.value === meu) { aiIn.value = (base0 + texto).trim(); aiIn.dispatchEvent(new Event('input')); }
+      return;
+    }
     if (texto === null) return avisar('Não consegui transcrever agora. Tente de novo ou digite.', 4000);
     if (!texto) return avisar('Não ouvi nada — toque e fale');
-    aiIn.value = (base + texto).trim(); aiIn.dispatchEvent(new Event('input'));
+    aiIn.value = (base0 + texto).trim(); aiIn.dispatchEvent(new Event('input'));
     if (matchMedia('(hover:hover)').matches) { aiIn.focus({preventScroll: true}); aiIn.setSelectionRange(aiIn.value.length, aiIn.value.length); }
   };
   /* um clique no microfone liga, outro clique desliga (Espaço/Enter também, pelo clique nativo do botão) */
   aiMic.addEventListener('click', e => {
     e.preventDefault();
-    if (grav) { if (grav !== 'enviando') pararGrav(); return; }
+    if (grav) return pararGrav();
     if (rec) { if (ouvindo) pausar(); } else comecar();
   });
   aiMic.addEventListener('contextmenu', e => e.preventDefault());
