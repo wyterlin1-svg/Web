@@ -988,21 +988,34 @@ if (!AiSR) aiMic.hidden = true;
     aiPararVoz();
     clearTimeout(tDica); ouvindo = true; iniciou = false; fixo = prov = '';
     base = aiIn.value.trim() ? aiIn.value.trim() + ' ' : '';
-    rec = new AiSR(); rec.lang = 'pt-BR'; rec.continuous = !/Android/i.test(navigator.userAgent); rec.interimResults = true; rec.maxAlternatives = 1;
-    rec.onstart = () => { iniciou = true; if (!ouvindo) encerrar(); };
-    rec.onresult = ev => {
-      prov = '';
-      for (let i = 0; i < ev.results.length; i++) prov = juntar(prov, ev.results[i][0].transcript);   /* refaz o trecho inteiro a cada evento, nunca acumula duas vezes */
-      mostrar();
+    /* quem decide quando terminou é a pessoa: se ela fizer uma pausa, o aparelho encerra o reconhecimento sozinho,
+       e a Nina liga de novo na hora (com um reconhecedor novo, que é o que funciona em todos os celulares) */
+    let falhas = 0;
+    const ligar = () => {
+      if (!ouvindo) return;
+      const r = rec = new AiSR(); r.lang = 'pt-BR'; r.continuous = !/Android/i.test(navigator.userAgent); r.interimResults = true; r.maxAlternatives = 1;
+      r.onstart = () => { if (rec !== r) return; iniciou = true; falhas = 0; if (!ouvindo) encerrar(); };
+      r.onresult = ev => {
+        if (rec !== r) return;
+        prov = '';
+        for (let i = 0; i < ev.results.length; i++) prov = juntar(prov, ev.results[i][0].transcript);   /* refaz o trecho inteiro a cada evento, nunca acumula duas vezes */
+        mostrar();
+      };
+      r.onerror = ev => {
+        if (rec !== r) return;
+        if (/not-allowed|service-not-allowed|audio-capture/.test(ev.error)) { finalizar(); aiBolha('Para falar comigo por voz, permita o uso do microfone no navegador.', 'bot'); }
+      };   /* "no-speech" (silêncio), "aborted" e "network" não param nada: o onend religa */
+      r.onend = () => {
+        if (rec !== r) return;
+        fixo = juntar(fixo, prov); prov = '';
+        if (ouvindo) setTimeout(ligar, 120); else finalizar();
+      };
+      try { r.start(); }
+      catch (_) { if (++falhas > 20) return finalizar(); setTimeout(ligar, 300); }   /* o aparelho recusou agora: tenta de novo */
     };
-    rec.onerror = ev => {
-      if (/not-allowed|service-not-allowed|audio-capture/.test(ev.error)) { finalizar(); aiBolha('Para falar comigo por voz, permita o uso do microfone no navegador.', 'bot'); }
-    };
-    /* alguns celulares encerram sozinhos no meio da fala: até tocar de novo no microfone, continua ouvindo */
-    rec.onend = () => { fixo = juntar(fixo, prov); prov = ''; if (ouvindo && rec) { try { rec.start(); } catch (_) { finalizar(); } } else finalizar(); };
     visual('ouvindo'); aiMic.setAttribute('aria-label', 'Parar de ouvir'); aiMic.title = 'Parar de ouvir';
-    tLimite = setTimeout(pausar, 60000); /* esqueceu ligado: encerra e transcreve sozinho */
-    try { rec.start(); } catch (_) { finalizar(); }
+    tLimite = setTimeout(pausar, 15 * 60000);   /* só por segurança, se esquecerem ligado por 15 minutos */
+    ligar();
   };
   /* novo toque no microfone: para de ouvir e deixa o recado escrito na caixa */
   const pausar = () => {
@@ -1049,20 +1062,25 @@ if (!AiSR) aiMic.hidden = true;
     } catch (_) { pico = 1; }
   };
   /* texto ao vivo enquanto grava (reconhecimento do aparelho); se o aparelho não deixar, segue só a gravação com o relógio */
-  const vivoComecar = () => {
+  let vivoFalhas = 0;
+  const vivoComecar = continuar => {
     if (!AiSR) return;
-    fixo = prov = '';
+    if (!continuar) { fixo = prov = ''; vivoFalhas = 0; }
     try {
       const r = vivo = new AiSR(); r.lang = 'pt-BR'; r.continuous = !/Android/i.test(navigator.userAgent); r.interimResults = true; r.maxAlternatives = 1;
+      r.onstart = () => { vivoFalhas = 0; };
       r.onresult = ev => {
         if (vivo !== r) return;
         prov = ''; for (let i = 0; i < ev.results.length; i++) prov = juntar(prov, ev.results[i][0].transcript);
         mostrar(); aiIn.placeholder = '';
       };
       r.onerror = ev => { if (vivo === r && /not-allowed|service-not-allowed|audio-capture|network/.test(ev.error)) { vivo = null; tRelogio = tRelogio || setInterval(relogio, 500); } };
-      r.onend = () => { if (vivo !== r) return; fixo = juntar(fixo, prov); prov = ''; if (grav && grav !== 'pedindo') { try { r.start(); } catch (_) { vivo = null; } } };
+      r.onend = () => { if (vivo !== r) return; fixo = juntar(fixo, prov); prov = ''; if (grav && grav !== 'pedindo') setTimeout(() => { if (vivo === r && grav && grav !== 'pedindo') vivoComecar(true); }, 120); };
       r.start();
-    } catch (_) { vivo = null; }
+    } catch (_) {
+      if (continuar && ++vivoFalhas <= 20 && grav && grav !== 'pedindo') { vivo = {}; setTimeout(() => { if (grav && grav !== 'pedindo') vivoComecar(true); }, 300); }
+      else vivo = null;
+    }
   };
   const gravar = async () => {
     aiPararVoz(); clearTimeout(tDica);
@@ -1081,7 +1099,7 @@ if (!AiSR) aiMic.hidden = true;
     visual('ouvindo'); relogio(); tRelogio = 0;
     vivoComecar(); if (!vivo) tRelogio = setInterval(relogio, 500);
     aiMic.setAttribute('aria-label', 'Parar de ouvir'); aiMic.title = 'Parar de ouvir';
-    tLimite = setTimeout(pararGrav, 90000);   /* esqueceu ligado: para e transcreve sozinho */
+    tLimite = setTimeout(pararGrav, 15 * 60000);   /* só por segurança: quem decide quando terminou é a pessoa */
   };
   let escrito = '', dentro = '';
   const pararGrav = () => {
