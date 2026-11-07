@@ -1148,6 +1148,12 @@ const aiConcluir = (resumo, atendente) => {
     ? '<strong>🙋 Um atendente da Murinoi já foi avisado.</strong><span>Ele vai falar com você pelo contato que você deixou. Se preferir, chame agora no WhatsApp.</span><button class="btn" type="button">Falar com um atendente no WhatsApp</button>'
     : '<strong>✓ Pronto! A equipe da Murinoi já recebeu o seu pedido.</strong><span>Quer agilizar? Envie o resumo pelo WhatsApp.</span><button class="btn" type="button">Enviar resumo no WhatsApp</button>';
   c.querySelector('button').onclick = () => openWa('Olá, Murinoi! Vim pelo site e conversei com a Nina.\n\n' + (resumo || ''));
+  /* proposta com a análise de riscos do modelo atual e a solução, preparada pela Nina */
+  if (!atendente && aiMem.proposta && /^\/nina\/proposta\/[\w-]+\?t=[0-9a-f]+$/.test(aiMem.proposta)) {
+    const a = document.createElement('a'); a.className = 'btn'; a.href = aiMem.proposta; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = 'Ver minha proposta e análise de riscos'; a.style.marginBottom = '8px';
+    c.querySelector('span').after(a); c.querySelector('span').textContent = 'Preparei o diagnóstico com os riscos do seu modelo atual e a solução. Quer agilizar? Envie o resumo pelo WhatsApp.';
+  }
   aiMsgs.appendChild(c); aiMsgs.scrollTop = aiMsgs.scrollHeight;
   if (!aiLead) { aiLead = true; gtag('event', 'generate_lead', { method: 'agente_ia', origem: 'site' }); }
 };
@@ -1177,7 +1183,7 @@ const aiEnviar = async txt => {
   try {
     const d = await pedir().catch(() => new Promise(ok => setTimeout(ok, 800)).then(pedir));
     dig.textContent = d.resposta; aiVozBotao(dig, d.resposta); aiMem.log.push(['bot', d.resposta]);
-    if (d.pronto || d.atendente) { aiMem.pronto = true; aiMem.resumo = d.resumo; if (d.atendente) aiMem.atendente = true; aiConcluir(d.resumo, aiMem.atendente); }
+    if (d.pronto || d.atendente) { aiMem.pronto = true; aiMem.resumo = d.resumo; if (d.proposta) aiMem.proposta = d.proposta; if (d.atendente) aiMem.atendente = true; aiConcluir(d.resumo, aiMem.atendente); }
     aiSalvar();
   } catch (_) { dig.remove(); aiFalha(); }
   if (aiMem.pronto) { aiMem.fim = Date.now() + AI_ESPERA; aiSalvar(); aiAgendar(); }

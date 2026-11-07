@@ -10,7 +10,7 @@
 #   GET  /nina/saude   o site pergunta se a IA está pronta
 #   GET  /nina/chave?c=…  cadastrar/trocar a chave do Gemini
 #   GET  /nina/leads?c=…  ver os clientes atendidos pela Nina
-import asyncio, ast, base64, datetime, hashlib, html, json, math, operator, os, re, subprocess, tempfile, time
+import asyncio, ast, base64, datetime, hashlib, hmac, html, json, math, operator, os, re, subprocess, tempfile, time
 import aiohttp
 from aiohttp import web
 
@@ -110,8 +110,12 @@ def aplicar_contas(o):
         except Exception: pass
     def troca(t):
         return re.sub(r'\{\{?\s*(c\d+)\s*\}?\}', lambda m: valores.get(m.group(1), m.group(0)), t or '')
-    for campo in ('resposta', 'solucao', 'resumo'):
+    for campo in ('resposta', 'solucao', 'resumo', 'diagnostico'):
         if o.get(campo): o[campo] = troca(o[campo])
+    for r in o.get('riscos') or []:
+        if isinstance(r, dict):
+            for campo in ('titulo', 'por_que', 'perda', 'mitigacao'):
+                if r.get(campo): r[campo] = troca(str(r[campo]))
     return not re.search(r'\{\{?\s*c\d+\s*\}?\}', o.get('resposta', ''))   # True = todas as contas resolvidas
 
 # ---------------- instruções da Nina (chat do site) ----------------
@@ -132,6 +136,13 @@ Você conversa no chat do site murinoi.com. Seu trabalho é entender a necessida
 - Conta: quando tiver números, calcule o custo do problema e o ganho possível. NUNCA escreva o resultado de uma conta de cabeça: coloque a conta no campo "calculos" (com id c1, c2…, a expressão com números e + - * / e parênteses, ponto como separador decimal, e o formato: reais, horas, percentual, meses ou numero) e, no texto, escreva o marcador {c1}, {c2}… no lugar do resultado; o sistema faz a conta exata e troca o marcador pelo valor já formatado (ex.: R$ 1.234,56). Deixe claro que é uma estimativa e quais hipóteses usou.
 - Solução: diga qual solução da Murinoi resolve (app, sistema, automação, integração, IA ou site) e o que ela faz na prática.
 - Próximo passo: a equipe envia a proposta com solução, prazo e investimento.
+
+## Análise de riscos do modelo atual (o diferencial da proposta)
+Enquanto conversa, avalie os riscos que o cliente corre HOJE com o jeito atual de trabalhar e preencha o campo "riscos" (3 a 5 riscos, os mais relevantes primeiro), sempre com base no que ele contou — nunca invente fatos sobre o negócio dele.
+- Categorias: operacional (erros, retrabalho, gargalos, dependência de uma pessoa), financeiro (perda de receita, inadimplência, custo oculto, fluxo de caixa), conformidade (LGPD, fiscal, normas do setor), seguranca (vazamento, perda de dados, acesso indevido, sem backup), cliente (demora, atendimento perdido, experiência ruim), crescimento (não escala, limita o faturamento).
+- Para cada risco: titulo curto; probabilidade de 1 a 5 (1 rara, 2 improvável, 3 possível, 4 provável, 5 quase certa); impacto de 1 a 5 (1 mínimo, 2 baixo, 3 moderado, 4 alto, 5 grave); por_que (1 frase ligando ao que o cliente disse); perda: quando houver números, a perda estimada por mês ou por ano com marcador {cN} da calculadora (perda esperada = chance de acontecer × custo de cada ocorrência × ocorrências no período; diga as hipóteses); mitigacao: o que a solução da Murinoi faz contra esse risco; e probabilidade_depois e impacto_depois (1 a 5) com a solução implantada — seja realista: a solução REDUZ o risco, nunca diga que zera ou que é livre de falhas.
+- Em "diagnostico", escreva 1 ou 2 frases com o retrato do modelo atual e o principal risco.
+- Na conversa, quando já tiver o retrato, mencione de forma leve o risco mais grave e o valor em jogo (ex.: "Hoje o maior risco é perder pedidos no WhatsApp, o que pode custar cerca de {c3} por mês"), sem assustar e sem listar todos.
 
 ## Fórmulas (monte a expressão com elas)
 - Custo da hora de um funcionário CLT ≈ salário mensal × 1,7 (encargos e benefícios, aproximado) ÷ 176 horas úteis por mês.
@@ -154,7 +165,7 @@ Saúde (hospitais, clínicas, consultórios, laboratórios): agendamento online,
 Outros setores (comércio, serviços, indústria, educação, logística, imóveis): aplique o mesmo método, identificando a tarefa repetitiva, o volume e o custo.
 
 ## Fechamento
-Quando tiver os itens 1, 2, 5 e 6: marque pronto = true e preencha nome, contato, negocio, necessidade, resultado, prazo, solucao e resumo. Na solucao, descreva a solução recomendada e o ganho estimado. O resumo (6 a 10 linhas, para a equipe) deve ter: contexto e porte, dor atual, números informados, contas feitas com as hipóteses, solução recomendada com módulos principais, ganho estimado e urgência. Na resposta, agradeça pelo nome, confirme o que entendeu em uma frase, diga que a equipe da Murinoi vai entrar em contato com a solução, o prazo e o investimento e termine sempre perguntando se pode ajudar com mais alguma coisa (por exemplo: "Posso te ajudar com mais alguma coisa?"). Antes disso, pronto = false.
+Quando tiver os itens 1, 2, 5 e 6: marque pronto = true e preencha nome, contato, negocio, necessidade, resultado, prazo, solucao e resumo. Na solucao, descreva a solução recomendada e o ganho estimado. O resumo (6 a 10 linhas, para a equipe) deve ter: contexto e porte, dor atual, números informados, contas feitas com as hipóteses, solução recomendada com módulos principais, ganho estimado e urgência. Ao marcar pronto, os riscos e o diagnostico precisam estar preenchidos: o sistema gera para o cliente uma proposta com o mapa de riscos (antes e depois da solução), e um botão para abri-la aparece logo abaixo da sua mensagem. Na resposta, agradeça pelo nome, confirme o que entendeu em uma frase, diga que preparou a análise de riscos e a proposta de solução (o botão aparece logo abaixo), que a equipe da Murinoi vai entrar em contato com o prazo e o investimento e termine sempre perguntando se pode ajudar com mais alguma coisa (por exemplo: "Posso te ajudar com mais alguma coisa?"). Antes disso, pronto = false.
 
 Depois que o atendimento estiver pronto, continue com pronto = true e mantenha os campos preenchidos (atualize-os se o cliente trouxer informação nova). Se o cliente pedir mais alguma coisa, ajude normalmente. Se ele disser que não precisa de mais nada ou agradecer, despeça-se com gentileza em uma frase, sem fazer nova pergunta.
 
@@ -181,7 +192,13 @@ ESQUEMA = {'type': 'OBJECT', 'properties': {
     'nome': S(), 'contato': S('WhatsApp com DDD ou e-mail informado pelo cliente'), 'negocio': S(),
     'necessidade': S('O problema do cliente e como ele faz hoje (ou a explicação do pedido de atendente)'),
     'resultado': S('O resultado que o cliente espera alcançar'), 'prazo': S('Prazo ou urgência (vazio se não informou)'),
-    'solucao': S('Solução sugerida pela Murinoi, com o ganho esperado'), 'resumo': S('Resumo executivo completo para a equipe')},
+    'solucao': S('Solução sugerida pela Murinoi, com o ganho esperado'), 'resumo': S('Resumo executivo completo para a equipe'),
+    'diagnostico': S('1 ou 2 frases: retrato do modelo atual e o principal risco'),
+    'riscos': {'type': 'ARRAY', 'items': {'type': 'OBJECT', 'properties': {
+        'titulo': S(), 'categoria': {'type': 'STRING', 'enum': ['operacional', 'financeiro', 'conformidade', 'seguranca', 'cliente', 'crescimento']},
+        'probabilidade': {'type': 'INTEGER'}, 'impacto': {'type': 'INTEGER'}, 'por_que': S(), 'perda': S('Perda estimada com {cN}, ou vazio'),
+        'mitigacao': S(), 'probabilidade_depois': {'type': 'INTEGER'}, 'impacto_depois': {'type': 'INTEGER'}},
+        'required': ['titulo', 'categoria', 'probabilidade', 'impacto', 'mitigacao', 'probabilidade_depois', 'impacto_depois']}}},
     'required': ['resposta', 'pronto', 'etapa_humano']}
 
 def conversa(historico, atual, cabecalho):
@@ -234,6 +251,32 @@ def gravar_leads(d):
     with open(ARQ_LEADS + '.tmp', 'w') as f: json.dump(d, f, ensure_ascii=False, indent=1)
     os.replace(ARQ_LEADS + '.tmp', ARQ_LEADS)
 
+NIVEIS = [(15, 'crítico', '#b54a4a'), (10, 'alto', '#d07a4f'), (5, 'moderado', '#c9a24a'), (1, 'baixo', '#6f9a7a')]
+def nivel(p, i):
+    n = p * i
+    return next((nome, cor) for lim, nome, cor in NIVEIS if n >= lim)
+
+def arrumar_riscos(lista):
+    # aceita só o que tem sentido, garante notas de 1 a 5 e ordena do mais grave para o menos grave
+    lim = lambda v, d: max(1, min(5, int(v))) if str(v).strip().lstrip('-').isdigit() else d
+    saida = []
+    for r in lista if isinstance(lista, list) else []:
+        if not isinstance(r, dict) or not str(r.get('titulo') or '').strip(): continue
+        p, i = lim(r.get('probabilidade'), 3), lim(r.get('impacto'), 3)
+        pd, idp = min(p, lim(r.get('probabilidade_depois'), p)), min(i, lim(r.get('impacto_depois'), i))
+        saida.append({'titulo': str(r['titulo']).strip()[:120], 'categoria': str(r.get('categoria') or 'operacional'),
+                      'probabilidade': p, 'impacto': i, 'probabilidade_depois': pd, 'impacto_depois': idp,
+                      'por_que': str(r.get('por_que') or '').strip()[:400], 'perda': str(r.get('perda') or '').strip()[:300],
+                      'mitigacao': str(r.get('mitigacao') or '').strip()[:400]})
+    saida.sort(key=lambda r: r['probabilidade'] * r['impacto'], reverse=True)
+    return saida[:6]
+
+def token_proposta(sessao):
+    return hmac.new((COD or 'murinoi').encode(), ('proposta:' + sessao).encode(), hashlib.sha256).hexdigest()[:20]
+
+def link_proposta(lead):
+    return '/nina/proposta/%s?t=%s' % (lead['protocolo'], token_proposta(lead['sessao']))
+
 def protocolo(sessao):
     return 'MUR-' + datetime.datetime.now(BRT).strftime('%y%m%d') + '-' + re.sub(r'[^a-z0-9]', '', sessao, flags=re.I)[-4:].upper()
 
@@ -243,7 +286,9 @@ async def salvar_lead(sessao, o, historico, pagina, resposta):
     async with trava_leads:
         todos = ler_leads(); antigo = todos.get(sessao, {})
         lead = dict(antigo)
-        lead.update({k: str(o.get(k) or antigo.get(k) or '').strip() for k in ('nome', 'contato', 'negocio', 'necessidade', 'resultado', 'prazo', 'solucao', 'resumo')})
+        lead.update({k: str(o.get(k) or antigo.get(k) or '').strip() for k in ('nome', 'contato', 'negocio', 'necessidade', 'resultado', 'prazo', 'solucao', 'resumo', 'diagnostico')})
+        riscos = arrumar_riscos(o.get('riscos'))
+        lead['riscos'] = riscos or antigo.get('riscos') or []
         lead.update({'sessao': sessao, 'protocolo': antigo.get('protocolo') or protocolo(sessao), 'origem': pagina or 'site', 'historico': hist,
                      'data': antigo.get('data') or datetime.datetime.now(BRT).strftime('%d/%m/%Y %H:%M'),
                      'atualizado': datetime.datetime.now(BRT).strftime('%d/%m/%Y %H:%M'), 'atendente': bool(o.get('atendente') or antigo.get('atendente'))})
@@ -254,6 +299,7 @@ async def salvar_lead(sessao, o, historico, pagina, resposta):
         todos[sessao] = lead; gravar_leads(todos)
     log('lead %s salvo (%s)' % (lead['protocolo'], 'pediu atendente' if o.get('atendente') else 'pronto'))
     if avisar: asyncio.ensure_future(avisar_equipe(lead, bool(o.get('atendente'))))
+    return lead
 
 # ---------------- aviso no WhatsApp da Murinoi (pela Evolution, rede interna) ----------------
 _dono = ['', 0.0]
@@ -281,7 +327,9 @@ async def avisar_equipe(d, atendente):
     msg = (topo + '\n' + d['protocolo'] + ' · ' + d['data'] + '\n\n👤 *' + ou(d.get('nome'), 'Não informado') + '*\n📞 ' + ou(contato) +
            '\n🏢 ' + ou(d.get('negocio')) + '\n\n🧩 *Precisa:* ' + ou(d.get('necessidade')) + '\n' +
            ('🎯 *Quer:* ' + d['resultado'] + '\n' if d.get('resultado') else '') + ('⏱️ *Prazo:* ' + d['prazo'] + '\n' if d.get('prazo') else '') +
-           '💡 *Sugestão da Nina:* ' + ou(d.get('solucao')) + '\n\n' +
+           '💡 *Sugestão da Nina:* ' + ou(d.get('solucao')) + '\n' +
+           ''.join('⚠️ *Risco %s:* %s%s\n' % (nivel(r['probabilidade'], r['impacto'])[0], r['titulo'], (' — ' + r['perda']) if r.get('perda') else '') for r in (d.get('riscos') or [])[:3]) +
+           ('📄 Proposta: https://murinoi.com' + link_proposta(d) + '\n' if d.get('riscos') else '') + '\n' +
            ('👉 Responder: https://wa.me/' + fone if 12 <= len(fone) <= 13 else ('👉 Responder: ' + email if email else '')) +
            ('\n\n_Ficha completa: murinoi.com/nina/leads?c=' + COD + '_' if COD else ''))
     try:
@@ -306,10 +354,13 @@ async def chat(req):
     if o.get('etapa_humano') == 'explicou': o['resposta'] = 'Aguarde um momento que logo um dos nossos atendentes irá te responder.'
     o['atendente'] = o.get('etapa_humano') == 'explicou'
     pronto = o.get('pronto') is True
+    proposta = ''
     if pronto or o['atendente']:
-        try: await salvar_lead(sessao, o, b.get('historico'), str(b.get('page') or '')[:300], o['resposta'])
+        try:
+            lead = await salvar_lead(sessao, o, b.get('historico'), str(b.get('page') or '')[:300], o['resposta'])
+            if pronto and lead.get('riscos'): proposta = link_proposta(lead)
         except Exception as e: log('erro ao salvar lead: %s' % e)
-    return web.json_response({'resposta': o['resposta'], 'pronto': pronto, 'atendente': o['atendente'],
+    return web.json_response({'resposta': o['resposta'], 'pronto': pronto, 'atendente': o['atendente'], 'proposta': proposta,
                               'resumo': (o.get('resumo') or o.get('necessidade') or '') if (pronto or o['atendente']) else ''})
 
 PEDIDO_TRANSCRICAO = ('Transcreva exatamente o que a pessoa fala neste áudio, em português do Brasil, palavra por palavra, na ordem em que foi dito. '
@@ -449,12 +500,81 @@ async def pagina_leads(req):
         try: return datetime.datetime.strptime(l.get('atualizado', ''), '%d/%m/%Y %H:%M')
         except Exception: return datetime.datetime.min
     itens.sort(key=data_ord, reverse=True)
-    cards = ''.join('<div class="c"><small>%s · %s%s</small><h3 style="margin:4px 0">%s</h3><p><b>Contato:</b> %s<br><b>Negócio:</b> %s<br><b>Precisa:</b> %s<br><b>Quer:</b> %s<br><b>Prazo:</b> %s</p><p><b>Sugestão da Nina:</b> %s</p><p><b>Resumo:</b><br>%s</p><details><summary>Conversa completa</summary>%s</details></div>' % (
+    cards = ''.join('<div class="c"><small>%s · %s%s</small><h3 style="margin:4px 0">%s</h3><p><b>Contato:</b> %s<br><b>Negócio:</b> %s<br><b>Precisa:</b> %s<br><b>Quer:</b> %s<br><b>Prazo:</b> %s</p><p><b>Sugestão da Nina:</b> %s</p>%s<p><b>Resumo:</b><br>%s</p><details><summary>Conversa completa</summary>%s</details></div>' % (
         e(l.get('protocolo', '')), e(l.get('data', '')), ' · <b style="color:#a33">pediu atendente</b>' if l.get('atendente') else '', e(l.get('nome') or 'Sem nome'),
         e(l.get('contato') or '-'), e(l.get('negocio') or '-'), e(l.get('necessidade') or '-'), e(l.get('resultado') or '-'), e(l.get('prazo') or '-'),
-        e(l.get('solucao') or '-'), e(l.get('resumo') or '-').replace('\n', '<br>'),
+        e(l.get('solucao') or '-'),
+        ('<p><b>Riscos:</b><br>' + '<br>'.join('%s · %s%s' % (nivel(r['probabilidade'], r['impacto'])[0].upper(), e(r['titulo']), (' — ' + e(r['perda'])) if r.get('perda') else '') for r in l['riscos']) +
+         '<br><a href="%s">Abrir a proposta do cliente</a></p>' % e(link_proposta(l))) if l.get('riscos') else '',
+        e(l.get('resumo') or '-').replace('\n', '<br>'),
         ''.join('<div class="m%s">%s</div>' % (' eu' if m.get('q') == 'eu' else '', e(m.get('t', ''))) for m in l.get('historico', []))) for l in itens)
     return web.Response(content_type='text/html', text='<!doctype html><html lang="pt-BR"><head><title>Clientes da Nina</title>' + ESTILO + '</head><body><main><h1>Clientes atendidos pela Nina</h1><p>%d atendimento(s). Os dados são confidenciais (LGPD).</p>%s</main></body></html>' % (len(itens), cards or '<p>Nenhum ainda.</p>'))
+
+CATEG = {'operacional': 'Operação', 'financeiro': 'Financeiro', 'conformidade': 'Conformidade', 'seguranca': 'Segurança', 'cliente': 'Clientes', 'crescimento': 'Crescimento'}
+def mapa_svg(riscos, depois=False):
+    # matriz 5×5 (probabilidade × impacto) com os riscos numerados
+    c, m = 46, 34
+    cel = []
+    for p in range(1, 6):
+        for i in range(1, 6):
+            cor = nivel(p, i)[1]
+            cel.append('<rect x="%d" y="%d" width="%d" height="%d" rx="6" fill="%s" fill-opacity=".18"/>' % (m + (i - 1) * c, (5 - p) * c, c - 4, c - 4, cor))
+    pos = {}
+    pontos = []
+    for n, r in enumerate(riscos, 1):
+        p, i = (r['probabilidade_depois'], r['impacto_depois']) if depois else (r['probabilidade'], r['impacto'])
+        k = pos.get((p, i), 0); pos[(p, i)] = k + 1
+        x, y = m + (i - 1) * c + 13 + (k % 2) * 16, (5 - p) * c + 13 + (k // 2) * 16
+        pontos.append('<circle cx="%d" cy="%d" r="10" fill="%s"/><text x="%d" y="%d" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">%d</text>' % (x, y, nivel(p, i)[1], x, y + 4, n))
+    eixos = ('<text x="%d" y="%d" font-size="11" fill="#8e8894" text-anchor="middle">impacto →</text>' % (m + 2.5 * c, 5 * c + 18) +
+             '<text x="12" y="%d" font-size="11" fill="#8e8894" text-anchor="middle" transform="rotate(-90 12 %d)">probabilidade →</text>' % (2.5 * c, 2.5 * c))
+    return '<svg viewBox="0 0 %d %d" role="img" aria-label="Mapa de riscos" style="width:100%%;max-width:300px;height:auto">%s%s%s</svg>' % (m + 5 * c, 5 * c + 24, ''.join(cel), eixos, ''.join(pontos))
+
+async def pagina_proposta(req):
+    prot = req.match_info['prot']
+    lead = next((l for l in ler_leads().values() if l.get('protocolo') == prot), None)
+    if not lead or not hmac.compare_digest(req.query.get('t', ''), token_proposta(lead['sessao'])): raise web.HTTPNotFound()
+    e = html.escape
+    rs = lead.get('riscos') or []
+    nome = (lead.get('nome') or '').split(' ')[0] or 'você'
+    soma = lambda depois: sum((r['probabilidade_depois'] * r['impacto_depois']) if depois else (r['probabilidade'] * r['impacto']) for r in rs)
+    reducao = round(100 * (1 - soma(True) / soma(False))) if rs and soma(False) else 0
+    selo = lambda p, i: '<span class="selo" style="background:%s">%s</span>' % (nivel(p, i)[1], nivel(p, i)[0])
+    linhas = ''.join('<tr><td><b>%d. %s</b><small>%s%s</small></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (
+        n, e(r['titulo']), e(CATEG.get(r['categoria'], 'Operação')), (' · ' + e(r['por_que'])) if r.get('por_que') else '',
+        selo(r['probabilidade'], r['impacto']), e(r.get('perda') or '—'), e(r.get('mitigacao') or '—'), selo(r['probabilidade_depois'], r['impacto_depois']))
+        for n, r in enumerate(rs, 1))
+    wa = '/whatsapp/?texto=' + aiohttp.helpers.quote('Olá, Murinoi! Vi a minha proposta (%s) e quero conversar sobre a solução.' % prot, safe='') + '&origem=proposta'
+    pag = """<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<meta name="color-scheme" content="only light"><meta name="theme-color" content="#f7f3ee"><title>Proposta Murinoi · %(prot)s</title><link rel="icon" href="/favicon.svg">
+<style>:root{color-scheme:only light}*{box-sizing:border-box}body{margin:0;background:#f7f3ee;color:#2e2b33;font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:32px 16px 64px}.topo{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.2em;font-size:.9rem}
+h1{font-family:Georgia,serif;font-weight:400;font-size:clamp(1.9rem,6vw,2.6rem);line-height:1.15;margin:26px 0 6px}h2{font-size:1.1rem;margin:0 0 10px}
+.sub{color:#6f6975}.c{background:#fffdfa;border:1px solid #e4ddd6;border-radius:18px;padding:22px;margin-top:18px}
+.mapas{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:center}.mapas p{margin:4px 0 0;font-size:.85rem;color:#6f6975}
+.num{font-family:Georgia,serif;font-size:2.4rem;color:#9b6f7d;line-height:1}table{width:100%%;border-collapse:collapse;font-size:.92rem}
+th{text-align:left;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#8e8894;padding:8px 6px;border-bottom:1px solid #e4ddd6}
+td{padding:12px 6px;border-bottom:1px solid #efe9e3;vertical-align:top}td small{display:block;color:#8e8894;font-size:.8rem;margin-top:2px}
+.selo{display:inline-block;color:#fff;font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.btn{display:inline-block;margin-top:14px;padding:14px 24px;border-radius:999px;background:#2e2b33;color:#faf6f1;text-decoration:none;font-weight:500}
+.nota{font-size:.8rem;color:#8e8894;margin-top:22px}@media (max-width:640px){.mapas{grid-template-columns:1fr}table,tbody,tr,td{display:block}thead{display:none}
+tr{border-bottom:1px solid #e4ddd6;padding:8px 0}td{border:0;padding:4px 0}td:nth-child(2)::before{content:"Hoje: "}td:nth-child(3)::before{content:"Em jogo: "}
+td:nth-child(4)::before{content:"Como resolvemos: "}td:nth-child(5)::before{content:"Depois: "}td::before{color:#8e8894;font-size:.8rem}}
+@media print{body{background:#fff}.btn{display:none}.c{break-inside:avoid}}</style></head><body><main>
+<div class="topo"><img src="/favicon.svg" width="30" height="30" alt="">MURINOI</div>
+<h1>Proposta de solução para %(negocio)s</h1><p class="sub">Preparada para %(nome)s pela Nina, consultora de IA da Murinoi · %(prot)s · %(data)s</p>
+<div class="c"><h2>1. Diagnóstico do modelo atual</h2><p>%(diag)s</p></div>
+<div class="c"><h2>2. Mapa de riscos: hoje e com a solução</h2><div class="mapas"><div>%(antes)s<p>Hoje</p></div><div>%(depois)s<p>Com a solução da Murinoi</p></div></div>
+<p style="text-align:center;margin-top:14px"><span class="num">%(red)s%%</span><br><span class="sub">de redução estimada na exposição total a riscos</span></p></div>
+<div class="c"><h2>3. Riscos identificados e como cada um é tratado</h2><table><thead><tr><th>Risco</th><th>Hoje</th><th>O que está em jogo</th><th>Como a solução resolve</th><th>Depois</th></tr></thead><tbody>%(linhas)s</tbody></table></div>
+<div class="c"><h2>4. Solução recomendada</h2><p>%(solucao)s</p>%(resultado)s</div>
+<div class="c"><h2>5. Próximos passos</h2><p>A equipe da Murinoi confirma o escopo com você, valida os números e envia o prazo e o investimento. A primeira conversa e este diagnóstico não têm custo.</p>
+<a class="btn" href="%(wa)s">Falar com a Murinoi no WhatsApp</a></div>
+<p class="nota">Estimativas feitas pela IA a partir das informações que você passou na conversa; os valores e níveis de risco são aproximados e serão validados pela equipe. Nenhuma solução elimina todo risco: o objetivo é reduzi-los de forma mensurável. Documento confidencial (LGPD).</p>
+</main></body></html>""" % {'prot': e(prot), 'negocio': e(lead.get('negocio') or 'o seu negócio'), 'nome': e(nome), 'data': e(lead.get('atualizado') or lead.get('data') or ''),
+        'diag': e(lead.get('diagnostico') or lead.get('necessidade') or ''), 'antes': mapa_svg(rs), 'depois': mapa_svg(rs, True), 'red': reducao, 'linhas': linhas,
+        'solucao': e(lead.get('solucao') or ''), 'resultado': ('<p><b>Resultado esperado:</b> ' + e(lead['resultado']) + '</p>') if lead.get('resultado') else '', 'wa': e(wa)}
+    return web.Response(content_type='text/html', text=pag, headers={'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex'})
 
 async def saude(req):
     return web.json_response({'ok': True, 'ia': bool(chave())}, headers={'Cache-Control': 'no-store'})
@@ -463,6 +583,7 @@ app = web.Application(client_max_size=5 * 1024 * 1024)
 app.router.add_post('/nina/chat', chat); app.router.add_post('/nina/ouvir', ouvir); app.router.add_post('/nina/voz', voz)
 app.router.add_post('/nina/bot', bot); app.router.add_get('/nina/saude', saude)
 app.router.add_route('*', '/nina/chave', pagina_chave); app.router.add_get('/nina/leads', pagina_leads)
+app.router.add_get('/nina/proposta/{prot}', pagina_proposta)
 if __name__ == '__main__':
     log('Nina no ar' + (' (com chave do Gemini)' if chave() else ' — falta cadastrar a chave do Gemini'))
     web.run_app(app, port=int(os.environ.get('PORTA', '8095')), access_log=None, print=None)
