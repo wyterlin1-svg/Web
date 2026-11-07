@@ -21,7 +21,7 @@ EVO_URL = os.environ.get('EVO_URL', 'http://murinoi-evo:8080')
 NUM_FONTE = os.environ.get('NUM_FONTE', 'https://raw.githubusercontent.com/wyterlin1-svg/Web/hostinger/index.html')
 ORIGENS = re.compile(r'^https://(www\.)?murinoi\.com(/|$)|^http://(localhost|127\.0\.0\.1)(:\d+)?(/|$)')
 MODELOS_CHAT = ['gemini-3.1-flash-lite-preview', 'gemini-2.5-flash-lite', 'gemini-2.5-flash']
-MODELOS_OUVIR = ['gemini-2.5-flash', 'gemini-3.1-flash-lite-preview', 'gemini-2.5-flash-lite']
+MODELOS_OUVIR = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite-preview']
 MODELO_VOZ = 'gemini-2.5-flash-preview-tts'
 BRT = datetime.timezone(datetime.timedelta(hours=-3))   # horário de Brasília (sem horário de verão)
 
@@ -39,14 +39,21 @@ def config_modelo(modelo, base):
         c['thinkingConfig'] = {'thinkingBudget': 0}   # resposta rápida, sem "pensar" à toa
     return c
 
+_conexao = [None]
+def conexao():
+    # uma só conexão aberta com o Google, reaproveitada: poupa o "aperto de mão" (TLS) a cada pedido
+    if _conexao[0] is None or _conexao[0].closed:
+        _conexao[0] = aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=20, keepalive_timeout=120))
+    return _conexao[0]
+
 async def gemini(modelo, corpo, espera=30, k=None):
     k = k or chave()
     if not k: raise RuntimeError('sem chave do Gemini')
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=espera)) as s:
-        async with s.post(API + modelo + ':generateContent', json=corpo, headers={'x-goog-api-key': k}) as r:
-            d = await r.json(content_type=None)
-            if r.status != 200: raise RuntimeError('%s %s' % (r.status, str(d)[:300]))
-            return d
+    async with conexao().post(API + modelo + ':generateContent', json=corpo, headers={'x-goog-api-key': k},
+                              timeout=aiohttp.ClientTimeout(total=espera)) as r:
+        d = await r.json(content_type=None)
+        if r.status != 200: raise RuntimeError('%s %s' % (r.status, str(d)[:300]))
+        return d
 
 def texto_de(d):
     partes = (((d.get('candidates') or [{}])[0].get('content') or {}).get('parts') or [])
@@ -311,17 +318,21 @@ PEDIDO_TRANSCRICAO = ('Transcreva exatamente o que a pessoa fala neste áudio, e
     'nomes como Murinoi, Nina, WhatsApp, Pix e Google Play podem aparecer. Se não houver fala, responda exatamente: [silêncio]. Responda somente com o texto transcrito.')
 
 def converter(dados):
-    # deixa qualquer gravação (webm do Android/Chrome, mp4 do iPhone…) no formato que o Gemini lê melhor: ogg/opus mono 16 kHz
+    # deixa qualquer gravação no formato que o Gemini lê (ogg/opus). O webm do Android/Chrome já é opus:
+    # só troca a "embalagem" (instantâneo); o mp4 do iPhone é convertido (rápido, mono 16 kHz)
     with tempfile.TemporaryDirectory() as d:
         ent, sai = d + '/entrada', d + '/saida.ogg'
         open(ent, 'wb').write(dados)
-        r = subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', ent, '-ac', '1', '-ar', '16000', '-c:a', 'libopus', '-b:a', '24k', '-t', '120', sai], timeout=60)
-        if r.returncode != 0 or not os.path.exists(sai): raise ValueError('áudio ilegível')
-        return open(sai, 'rb').read()
+        for args in (['-c:a', 'copy'], ['-ac', '1', '-ar', '16000', '-c:a', 'libopus', '-b:a', '24k']):
+            r = subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', ent, '-vn', '-map', '0:a:0'] + args + ['-t', '120', '-f', 'ogg', sai], timeout=60, stderr=subprocess.DEVNULL)
+            if r.returncode == 0 and os.path.exists(sai) and os.path.getsize(sai) > 200: return open(sai, 'rb').read()
+        raise ValueError('áudio ilegível')
 
 async def ouvir(req):
-    do_site(req); limite(req, 'ouvir', 15)
-    try: b = await req.json(); dados = base64.b64decode(str(b.get('audio') or ''), validate=False)
+    do_site(req); limite(req, 'ouvir', 20)
+    try:
+        if req.content_type.startswith('audio/'): dados = await req.read()   # áudio direto, sem base64 (mais leve e rápido)
+        else: dados = base64.b64decode(str((await req.json()).get('audio') or ''), validate=False)
     except Exception: raise web.HTTPBadRequest()
     if not (300 < len(dados) < 3_000_000): raise web.HTTPBadRequest()
     try: ogg = await asyncio.get_running_loop().run_in_executor(None, converter, dados)
@@ -329,7 +340,7 @@ async def ouvir(req):
     corpo = {'contents': [{'role': 'user', 'parts': [{'inline_data': {'mime_type': 'audio/ogg', 'data': base64.b64encode(ogg).decode()}}, {'text': PEDIDO_TRANSCRICAO}]}]}
     for modelo in MODELOS_OUVIR:
         try:
-            t = texto_de(await gemini(modelo, dict(corpo, generationConfig=config_modelo(modelo, {'temperature': 0, 'maxOutputTokens': 2048})), 30))
+            t = texto_de(await gemini(modelo, dict(corpo, generationConfig=config_modelo(modelo, {'temperature': 0, 'maxOutputTokens': 2048})), 10))
             t = re.sub(r'^\s*(transcri[çc][ãa]o\s*:)\s*', '', t, flags=re.I).strip().strip('"“”').strip()
             if '[silêncio]' in t.lower() or '[silencio]' in t.lower(): t = ''
             return web.json_response({'texto': t}, headers={'Cache-Control': 'no-store'})
