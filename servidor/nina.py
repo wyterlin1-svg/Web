@@ -375,7 +375,7 @@ def converter(dados):
         ent, sai = d + '/entrada', d + '/saida.ogg'
         open(ent, 'wb').write(dados)
         for args in (['-c:a', 'copy'], ['-ac', '1', '-ar', '16000', '-c:a', 'libopus', '-b:a', '24k']):
-            r = subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', ent, '-vn', '-map', '0:a:0'] + args + ['-t', '120', '-f', 'ogg', sai], timeout=60, stderr=subprocess.DEVNULL)
+            r = subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', ent, '-vn', '-map', '0:a:0'] + args + ['-t', '900', '-f', 'ogg', sai], timeout=60, stderr=subprocess.DEVNULL)
             if r.returncode == 0 and os.path.exists(sai) and os.path.getsize(sai) > 200: return open(sai, 'rb').read()
         raise ValueError('áudio ilegível')
 
@@ -385,13 +385,13 @@ async def ouvir(req):
         if req.content_type.startswith('audio/'): dados = await req.read()   # áudio direto, sem base64 (mais leve e rápido)
         else: dados = base64.b64decode(str((await req.json()).get('audio') or ''), validate=False)
     except Exception: raise web.HTTPBadRequest()
-    if not (300 < len(dados) < 3_000_000): raise web.HTTPBadRequest()
+    if not (300 < len(dados) < 6_000_000): raise web.HTTPBadRequest()
     try: ogg = await asyncio.get_running_loop().run_in_executor(None, converter, dados)
     except Exception: raise web.HTTPBadRequest(text='áudio ilegível')
     corpo = {'contents': [{'role': 'user', 'parts': [{'inline_data': {'mime_type': 'audio/ogg', 'data': base64.b64encode(ogg).decode()}}, {'text': PEDIDO_TRANSCRICAO}]}]}
     for modelo in MODELOS_OUVIR:
         try:
-            t = texto_de(await gemini(modelo, dict(corpo, generationConfig=config_modelo(modelo, {'temperature': 0, 'maxOutputTokens': 2048})), 10))
+            t = texto_de(await gemini(modelo, dict(corpo, generationConfig=config_modelo(modelo, {'temperature': 0, 'maxOutputTokens': 8192})), 10 if len(ogg) < 250_000 else 60))
             t = re.sub(r'^\s*(transcri[çc][ãa]o\s*:)\s*', '', t, flags=re.I).strip().strip('"“”').strip()
             if '[silêncio]' in t.lower() or '[silencio]' in t.lower(): t = ''
             return web.json_response({'texto': t}, headers={'Cache-Control': 'no-store'})
@@ -579,7 +579,7 @@ td:nth-child(4)::before{content:"Como resolvemos: "}td:nth-child(5)::before{cont
 async def saude(req):
     return web.json_response({'ok': True, 'ia': bool(chave())}, headers={'Cache-Control': 'no-store'})
 
-app = web.Application(client_max_size=5 * 1024 * 1024)
+app = web.Application(client_max_size=8 * 1024 * 1024)
 app.router.add_post('/nina/chat', chat); app.router.add_post('/nina/ouvir', ouvir); app.router.add_post('/nina/voz', voz)
 app.router.add_post('/nina/bot', bot); app.router.add_get('/nina/saude', saude)
 app.router.add_route('*', '/nina/chave', pagina_chave); app.router.add_get('/nina/leads', pagina_leads)
