@@ -366,8 +366,10 @@ services:
         PY
         clone_subir() {
           [ "$$VOZ_CLONADA" = sim ] || return 0
-          mem=$$(awk '/MemTotal/{print int($$2/1024)}' /proc/meminfo)
-          if [ "$$mem" -lt 5500 ]; then echo "voz clonada: a VPS tem $${mem} MB de memória e precisa de uns 6 GB; a Nina segue com a voz $$VOZ_NOME"; return 0; fi
+          if ! rodando murinoi-clone; then
+            mem=$$(awk '/MemAvailable/{print int($$2/1024)}' /proc/meminfo)
+            if [ "$$mem" -lt 5500 ]; then echo "voz clonada: a VPS tem $${mem} MB de memória livre e a voz clonada precisa de uns 6 GB; a Nina segue com a voz $$VOZ_NOME"; return 0; fi
+          fi
           mkdir -p /segredos; [ -s /segredos/voz_codigo ] || head -c 9 /dev/urandom | od -An -tx1 | tr -d ' \n' > /segredos/voz_codigo
           COD=$$(cat /segredos/voz_codigo)
           df=$$(md5sum < /tmp/clone.Dockerfile | cut -c1-12)
@@ -520,9 +522,10 @@ services:
 
         subir
         voz_subir || true
-        clone_subir || true
+        nina_subir || true
         evo_subir || true
         nina_subir || true
+        clone_subir || true
         # a cada minuto: chatbot conectado? a cada hora: site de pé?
         n=0
         while true; do
